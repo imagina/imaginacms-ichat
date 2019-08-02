@@ -1,5 +1,9 @@
 url: https://github.com/imagina/asgardcms-ichat
 versions:
+  "1.0.1":
+    added:
+      - Add attached field nullable in message entity
+      - Add middleware in route create message
   "1.0.0":
     added:
       - Initial version 1.0.0
