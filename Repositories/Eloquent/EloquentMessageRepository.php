@@ -4,6 +4,7 @@ namespace Modules\Ichat\Repositories\Eloquent;
 
 use Modules\Ichat\Repositories\MessageRepository;
 use Modules\Core\Repositories\Eloquent\EloquentBaseRepository;
+use Illuminate\Support\Facades\Auth;
 
 class EloquentMessageRepository extends EloquentBaseRepository implements MessageRepository
 {
@@ -84,6 +85,7 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
   }
   public function create($data)
   {
+    $data['sender_id'] = Auth::user()->id;
     $message = $this->model->create($data);
     return $message;
   }
