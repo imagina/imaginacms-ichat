@@ -39,7 +39,7 @@ class NewMessage implements ShouldBroadcastNow
 
   public function broadcastAs()
   {
-    return 'notification'.$this->receiverId.'_'.$this->senderId;
+    return 'notification_'.$this->receiverId.'_'.$this->senderId;
   }
   /**
    * Get the channels the event should be broadcast on.
