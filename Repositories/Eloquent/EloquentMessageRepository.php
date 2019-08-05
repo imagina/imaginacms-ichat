@@ -41,6 +41,7 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
         $query->orderBy($orderByField, $orderWay);//Add order to query
       }
       //Filter by senderId
+
       if (isset($filter->senderId)) {
         $query->where("sender_id", $filter->senderId);
       }
@@ -117,5 +118,10 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
     /*== REQUEST ==*/
     $model = $query->where($field ?? 'id', $criteria)->first();
     $model ? $model->delete() : false;
+  }
+
+  // Custom methods
+  public function getThread () {
+
   }
 }
