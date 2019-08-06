@@ -40,15 +40,27 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
         $orderWay = $filter->order->way ?? 'desc';//Default way
         $query->orderBy($orderByField, $orderWay);//Add order to query
       }
-      //Filter by senderId
 
+      //Filter by senderId
       if (isset($filter->senderId)) {
         $query->where("sender_id", $filter->senderId);
       }
+
       //Filter by receiverId
       if (isset($filter->receiverId)) {
         $query->where("receiver_id", $filter->receiverId);
       }
+
+      // Filter bfor Get Thread Conversation
+      if(isset($filter->type) && isset($filter->user)){
+        if($filter->type == 'thread'){
+          $query->where(['sender_id'=> auth()->id(), 'receiver_id'=> $filter->user])
+            ->orWhere(function($query) use($filter){
+              $query->where(['sender_id' => $filter->user, 'receiver_id' => auth()->id()]);
+            });
+        }
+      }
+
     }
     /*== FIELDS ==*/
     if (isset($params->fields) && count($params->fields))
@@ -120,8 +132,4 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
     $model ? $model->delete() : false;
   }
 
-  // Custom methods
-  public function getThread () {
-
-  }
 }

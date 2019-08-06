@@ -23,6 +23,8 @@ use Modules\Ichat\Repositories\MessageRepository;
 // Events
 use Modules\Ichat\Events\NewMessage;
 
+use Illuminate\Support\Facades\Auth;
+
 class MessageApiController extends BaseApiController
 {
   private $message;
