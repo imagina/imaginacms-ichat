@@ -26,13 +26,13 @@ class IchatServiceProvider extends ServiceProvider
     public function register()
     {
         $this->registerBindings();
-        $this->app['events']->listen(BuildingSidebar::class, RegisterIchatSidebar::class);
+        //$this->app['events']->listen(BuildingSidebar::class, RegisterIchatSidebar::class);
 
-        $this->app['events']->listen(LoadingBackendTranslations::class, function (LoadingBackendTranslations $event) {
+        /*$this->app['events']->listen(LoadingBackendTranslations::class, function (LoadingBackendTranslations $event) {
             $event->load('messages', array_dot(trans('ichat::messages')));
             // append translations
 
-        });
+        });*/
     }
 
     public function boot()
