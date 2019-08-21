@@ -21,7 +21,7 @@ class CreateIchatMessagesTable extends Migration
             $table->foreign('sender_id')->references('id')->on(config('auth.table', 'users'))->onDelete('restrict');
             $table->integer('receiver_id')->unsigned()->nullable();
             $table->foreign('receiver_id')->references('id')->on(config('auth.table', 'users'))->onDelete('restrict');
-            $table->boolean('read')->default(false);
+            $table->boolean('status')->default(false);
             $table->timestamps();
         });
     }
