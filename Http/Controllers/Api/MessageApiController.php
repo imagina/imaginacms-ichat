@@ -125,7 +125,7 @@ class MessageApiController extends BaseApiController
       $params = $this->getParamsRequest($request);
       $data = $request->input('attributes');
       //Validate Request
-      $this->validateRequestApi(new CategoryRequest($data));
+      $this->validateRequestApi(new UpdateMessageRequest($data));
       //Update data
       $this->message->updateBy($criteria, $data, $params);
       //Response

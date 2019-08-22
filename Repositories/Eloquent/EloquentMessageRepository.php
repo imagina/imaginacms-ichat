@@ -61,6 +61,11 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
         }
       }
 
+      // Filter by Status
+      if (isset($filter->status)) {
+        $query->where('status', $filter->status);
+      }
+
     }
     /*== FIELDS ==*/
     if (isset($params->fields) && count($params->fields))

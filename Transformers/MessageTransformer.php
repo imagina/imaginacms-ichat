@@ -18,10 +18,10 @@ class MessageTransformer extends Resource
       'receiverName' => $this->when($this->receiver_id, $this->checkUser($this->receiver)),
       'receiverId' => $this->when($this->receiver_id, $this->receiver_id),
       'attached' => $this->when($this->attached, $this->attached),
-      // 'sender' => new UserTransformer ($this->whenLoaded('sender')),
+      'sender' => new UserTransformer ($this->whenLoaded('sender')),
       // 'receiver' => new UserTransformer ($this->whenLoaded('receiver')),
       'createdAt' => $this->when($this->created_at, $this->created_at),
-
+      'status' => $this->status,
     ];
     return $data;
   }
