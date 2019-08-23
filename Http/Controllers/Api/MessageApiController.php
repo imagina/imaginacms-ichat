@@ -46,7 +46,11 @@ class MessageApiController extends BaseApiController
       //Request to Repository
       $data = $this->message->getItemsBy($params);
       //Response
-      $response = ["data" => MessageTransformer::collection($data)];
+      if(isset($params->filter->count)){
+        $response = ["data" => $data->count()];
+      } else {
+        $response = ["data" => MessageTransformer::collection($data)];
+      }
       //If request pagination add meta-page
       $params->page ? $response["meta"] = ["page" => $this->pageTransformer($data)] : false;
     } catch (\Exception $e) {

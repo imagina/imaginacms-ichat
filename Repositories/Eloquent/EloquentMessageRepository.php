@@ -41,14 +41,19 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
         $query->orderBy($orderByField, $orderWay);//Add order to query
       }
 
-      //Filter by senderId
-      if (isset($filter->senderId)) {
-        $query->where("sender_id", $filter->senderId);
+      // Filter by conversation
+      if (isset($filter->conversation)) {
+        $query->where('conversation_id', $filter->conversation);
       }
 
-      //Filter by receiverId
-      if (isset($filter->receiverId)) {
-        $query->where("receiver_id", $filter->receiverId);
+      // Filter by user
+      if (isset($filter->user)) {
+        $query->where('user_id', $filter->user);
+      }
+
+      // Filter by isSeen
+      if (isset($filter->isSeen)) {
+        $query->where('is_seen', $filter->isSeen);
       }
 
       // Filter bfor Get Thread Conversation
@@ -60,12 +65,6 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
             });
         }
       }
-
-      // Filter by Status
-      if (isset($filter->status)) {
-        $query->where('status', $filter->status);
-      }
-
     }
     /*== FIELDS ==*/
     if (isset($params->fields) && count($params->fields))

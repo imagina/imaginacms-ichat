@@ -12,16 +12,13 @@ class MessageTransformer extends Resource
   {
     $data = [
       'id' => $this->id,
-      'message' => $this->when($this->message, $this->message),
-      'senderId' => $this->when($this->sender_id, $this->sender_id),
-      'senderName' => $this->when($this->sender_id, $this->checkUser($this->sender)),
-      'receiverName' => $this->when($this->receiver_id, $this->checkUser($this->receiver)),
-      'receiverId' => $this->when($this->receiver_id, $this->receiver_id),
-      'attached' => $this->when($this->attached, $this->attached),
-      'sender' => new UserTransformer ($this->whenLoaded('sender')),
-      // 'receiver' => new UserTransformer ($this->whenLoaded('receiver')),
-      'createdAt' => $this->when($this->created_at, $this->created_at),
-      'status' => $this->status,
+      'type' => $this->when( $this->type, $this->type ),
+      'body' => $this->when( $this->body, $this->body ),
+      'attached' => $this->when( $this->attached, $this->attached ),
+      'conversationId' => $this->when( $this->conversation_id, $this->conversation_id ),
+      'userId' => $this->when( $this->user_id, $this->user_id ),
+      'user' => new UserTransformer ( $this->whenLoaded('user') ),
+      'conversation' => new UserTransformer ( $this->whenLoaded('conversation') ),
     ];
     return $data;
   }
