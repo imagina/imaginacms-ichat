@@ -79,7 +79,7 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
   }
   public function getItem($criteria, $params = false)
   {
-    // INITIALIZE QUERY
+    //Initialize query
     $query = $this->model->query();
     /*== RELATIONSHIPS ==*/
     if (in_array('*', $params->include)) {//If Request all relationships
@@ -90,12 +90,22 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
         $includeDefault = array_merge($includeDefault, $params->include);
       $query->with($includeDefault);//Add Relationships to query
     }
-    /*== FIELDS ==*/
-    if (is_array($params->fields) && count($params->fields))
-      $query->select($params->fields);
     /*== FILTER ==*/
     if (isset($params->filter)) {
-
+      $filter = $params->filter;
+      // find translatable attributes
+      $translatedAttributes = $this->model->translatedAttributes;
+      if(isset($filter->field))
+        $field = $filter->field;
+      // filter by translatable attributes
+      if (isset($field) && in_array($field, $translatedAttributes))//Filter by slug
+        $query->whereHas('translations', function ($query) use ($criteria, $filter, $field) {
+          $query->where('locale', $filter->locale)
+            ->where($field, $criteria);
+        });
+      else
+        // find by specific attribute or by id
+        $query->where($field ?? 'id', $criteria);
     }
     /*== REQUEST ==*/
     return $query->first();
