@@ -10,6 +10,7 @@ class MessageTransformer extends Resource
 {
   public function toArray($request)
   {
+    $this->user;
     $data = [
       'id' => $this->id,
       'type' => $this->when( $this->type, $this->type ),
@@ -19,6 +20,7 @@ class MessageTransformer extends Resource
       'userId' => $this->when( $this->user_id, $this->user_id ),
       'user' => new UserTransformer ( $this->whenLoaded('user') ),
       'conversation' => new UserTransformer ( $this->whenLoaded('conversation') ),
+      'createdAt' => $this->when( $this->created_at, $this->created_at ),
     ];
     return $data;
   }
