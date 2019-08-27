@@ -19,7 +19,7 @@ class MessageTransformer extends Resource
       'conversationId' => $this->when( $this->conversation_id, $this->conversation_id ),
       'userId' => $this->when( $this->user_id, $this->user_id ),
       'user' => new UserTransformer ( $this->whenLoaded('user') ),
-      'conversation' => new UserTransformer ( $this->whenLoaded('conversation') ),
+      'conversation' => new ConversationTransformer ( $this->whenLoaded('conversation') ),
       'createdAt' => $this->when( $this->created_at, $this->created_at ),
     ];
     return $data;

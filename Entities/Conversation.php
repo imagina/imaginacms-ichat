@@ -23,4 +23,9 @@ class Conversation extends Model
     return $this->belongsToMany("Modules\\User\\Entities\\{$driver}\\User", 'ichat__conversation_user');
   }
 
+  public function conversationUsers()
+  {
+    return $this->hasMany('Modules\Ichat\Entities\ConversationUser');
+  }
+
 }

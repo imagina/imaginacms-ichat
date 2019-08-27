@@ -5,6 +5,7 @@ namespace Modules\Ichat\Repositories\Eloquent;
 use Modules\Ichat\Repositories\MessageRepository;
 use Modules\Core\Repositories\Eloquent\EloquentBaseRepository;
 use Illuminate\Support\Facades\Auth;
+use Modules\Ichat\Events\MessageWasCreated;
 
 class EloquentMessageRepository extends EloquentBaseRepository implements MessageRepository
 {
@@ -114,6 +115,7 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
   {
     $data['sender_id'] = Auth::user()->id;
     $message = $this->model->create($data);
+    event(new  MessageWasCreated($message));
     return $message;
   }
   public function updateBy($criteria, $data, $params = false)
