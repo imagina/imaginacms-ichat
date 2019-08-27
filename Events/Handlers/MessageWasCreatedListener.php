@@ -31,7 +31,8 @@ class MessageWasCreatedListener
       $message = Message::find($event->message->id);
       $conversationUsers = $message->conversation->conversationUsers->pluck('id');
       ConversationUser::whereIn('id', $conversationUsers)->where(function ($query) use ($message){
-        $query->where('user_id', '!=',$message->user_id);
+        $query->where('user_id', '!=',$message->user_id)
+              ->where('last_message_readed', null);
       })->update([
         'last_message_readed' => $message->id,
       ]);
