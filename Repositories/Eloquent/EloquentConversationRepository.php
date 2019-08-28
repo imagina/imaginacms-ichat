@@ -56,6 +56,15 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
         $query->where('status', $filter->status);
       }
 
+      // Filter between any users
+      if (isset($filter->between)) {
+        foreach ($filter->between as $user){
+          $query->whereHas('users', function ($query) use ($filter, $user){
+            $query->where('user_id', $user);
+          });
+        }
+      }
+
     }
     /*== FIELDS ==*/
     if (isset($params->fields) && count($params->fields))
