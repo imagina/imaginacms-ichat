@@ -103,8 +103,6 @@ class MessageApiController extends BaseApiController
       $this->validateRequestApi(new CreateMessageRequest($data));
       //Create item
       $message = new MessageTransformer($this->message->create($data));
-      //Event
-      event(new NewMessage($message->sender_id, $message->receiver_id, $message));
       //Response
       $response = ["data" => $message];
       \DB::commit(); //Commit to Data Base
