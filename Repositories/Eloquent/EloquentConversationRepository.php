@@ -112,9 +112,12 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
   }
   public function create($data)
   {
-    $data['sender_id'] = Auth::user()->id;
-    $message = $this->model->create($data);
-    return $message;
+    //$data['sender_id'] = Auth::user()->id;
+    $conversation = $this->model->create($data);
+    if ($conversation) {
+      $conversation->users()->sync(array_get($data, 'users', []));
+    }
+    return $conversation;
   }
   public function updateBy($criteria, $data, $params = false)
   {
