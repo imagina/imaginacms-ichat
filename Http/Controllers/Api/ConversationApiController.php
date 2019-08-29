@@ -92,10 +92,26 @@ class ConversationApiController extends BaseApiController
     \DB::beginTransaction();
     try {
       $data = $request->input('attributes') ?? [];//Get data
-      //Validate Request
-      $this->validateRequestApi(new CreateConversationRequest($data));
-      //Create item
-      $conversation = new ConversationTransformer($this->conversation->create($data));
+
+      // init instace of Request
+      $newRequest = new Request();
+      // build filters
+      $newRequest->merge(["filter" => json_encode(["between" => $data['users']])]);
+      // Get params of request
+      $params = $this->getParamsRequest($newRequest);
+      // Use method getItemsBy of eloquent conversation repo for get equals conversations
+      $ifexistConversation = $this->conversation->getItemsBy($params);
+
+      // If exist as minimum 1 conversation equals, that is return
+      if (count($ifexistConversation) > 0){
+        $conversation = new ConversationTransformer($ifexistConversation[0]);
+      } else {
+        //Validate Request
+        $this->validateRequestApi(new CreateConversationRequest($data));
+        //Create item
+        $conversation = new ConversationTransformer($this->conversation->create($data));
+      }
+
       //Response
       $response = ["data" => $conversation];
       \DB::commit(); //Commit to Data Base
