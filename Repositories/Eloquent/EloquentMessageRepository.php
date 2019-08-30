@@ -6,6 +6,7 @@ use Modules\Ichat\Repositories\MessageRepository;
 use Modules\Core\Repositories\Eloquent\EloquentBaseRepository;
 use Illuminate\Support\Facades\Auth;
 use Modules\Ichat\Events\MessageWasCreated;
+use Modules\Ichat\Events\ConversationUserWasUpdated;
 
 class EloquentMessageRepository extends EloquentBaseRepository implements MessageRepository
 {
@@ -115,7 +116,15 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
   {
     $data['sender_id'] = Auth::user()->id;
     $message = $this->model->create($data);
-    event(new  MessageWasCreated($message));
+    if ($message){
+      event(new  MessageWasCreated($message));
+      $conversationUsers = $message->conversation->conversationUsers;
+      foreach ($conversationUsers as $conversationUser){
+        if ($conversationUser->user_id != Auth::user()->id){
+          event(new  ConversationUserWasUpdated($conversationUser->user_id, $message));
+        }
+      }
+    }
     return $message;
   }
   public function updateBy($criteria, $data, $params = false)
