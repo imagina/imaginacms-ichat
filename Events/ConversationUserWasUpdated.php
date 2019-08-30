@@ -7,6 +7,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Modules\Ichat\Transformers\MessageTransformer;
 
 class ConversationUserWasUpdated implements ShouldBroadcast
 {
@@ -34,7 +35,7 @@ class ConversationUserWasUpdated implements ShouldBroadcast
     public function broadcastWith()
     {
         return [
-            'id' => $this->message
+            'message' => (new MessageTransformer($this->message))
         ];
     }
 
