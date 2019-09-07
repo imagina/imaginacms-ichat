@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Auth;
 class ConversationUserApiController extends BaseApiController
 {
   private $conversationUser;
+
   public function __construct(ConversationUserRepository $conversationUser)
   {
     $this->conversationUser = $conversationUser;

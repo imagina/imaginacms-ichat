@@ -25,12 +25,17 @@ use Modules\Ichat\Events\NewMessage;
 
 use Illuminate\Support\Facades\Auth;
 
+use Modules\Notification\Services\Notification as PushNotification;
+
 class MessageApiController extends BaseApiController
 {
   private $message;
-  public function __construct(MessageRepository $message)
+  private $notificationP;
+
+  public function __construct(MessageRepository $message, PushNotification $notificationP)
   {
     $this->message = $message;
+    $this->notificationP= $notificationP;
   }
 
   /**
@@ -102,9 +107,17 @@ class MessageApiController extends BaseApiController
       //Validate Request
       $this->validateRequestApi(new CreateMessageRequest($data));
       //Create item
-      $message = new MessageTransformer($this->message->create($data));
+      $message = $this->message->create($data);
+
+      $conversationUsers = $message->conversation->conversationUsers;
+      foreach ($conversationUsers as $conversationUser){
+        if ($conversationUser->user_id != Auth::user()->id){
+          $this->notificationP->to($conversationUser->user_id)->push( trans('ichat::messages.notification.newMessage') , $message->body, '', '');
+        }
+      }
+
       //Response
-      $response = ["data" => $message];
+      $response = ["data" => new MessageTransformer($message)];
       \DB::commit(); //Commit to Data Base
     } catch (\Exception $e) {
       \DB::rollback();//Rollback to Data Base
