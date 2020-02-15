@@ -65,6 +65,14 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
         }
       }
 
+      // Filter by user
+      if (isset($filter->myconversations)) {
+        $query->wherehas('users', function ($query){
+          $query->where('user_id', Auth::id());
+        });
+      }
+
+
     }
     /*== FIELDS ==*/
     if (isset($params->fields) && count($params->fields))
