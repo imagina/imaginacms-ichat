@@ -6,6 +6,7 @@ use Modules\Ichat\Repositories\MessageRepository;
 use Modules\Core\Repositories\Eloquent\EloquentBaseRepository;
 use Illuminate\Support\Facades\Auth;
 use Modules\Ichat\Events\MessageWasCreated;
+use Modules\Ichat\Events\NewMessageInConversation;
 use Modules\Ichat\Events\ConversationUserWasUpdated;
 
 class EloquentMessageRepository extends EloquentBaseRepository implements MessageRepository
@@ -117,6 +118,7 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
     $data['sender_id'] = Auth::user()->id;
     $message = $this->model->create($data);
     if ($message){
+      event(new NewMessageInConversation($message));
       event(new  MessageWasCreated($message));
       $conversationUsers = $message->conversation->conversationUsers;
       foreach ($conversationUsers as $conversationUser){
