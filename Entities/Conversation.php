@@ -3,9 +3,15 @@
 namespace Modules\Ichat\Entities;
 
 use Illuminate\Database\Eloquent\Model;
+use Laracasts\Presenter\PresentableTrait;
+use Modules\Ichat\Presenters\ConversationPresenter;
 
 class Conversation extends Model
 {
+  use PresentableTrait;
+
+  protected $presenter = ConversationPresenter::class;
+
   protected $table = 'ichat__conversations';
 
   protected $fillable = [
