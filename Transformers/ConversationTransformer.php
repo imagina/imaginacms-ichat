@@ -13,6 +13,7 @@ class ConversationTransformer extends Resource
     $data = [
       'id' => $this->id,
       'private' => $this->private ? true : false,
+      "lastMessageReaded" => $this->present()->lastMessageReaded,
       'users' => UserTransformer::collection( $this->whenLoaded('users') ),
       'messages' => MessageTransformer::collection($this->whenLoaded('messages')),
     ];
