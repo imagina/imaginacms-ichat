@@ -16,6 +16,7 @@ class ConversationTransformer extends Resource
       "lastMessageReaded" => $this->present()->lastMessageReaded,
       'users' => UserTransformer::collection( $this->whenLoaded('users') ),
       'messages' => MessageTransformer::collection($this->whenLoaded('messages')),
+      'conversationUsers' => ConversationUserTransformer::collection($this->whenLoaded('conversationUsers')),
     ];
     return $data;
   }
