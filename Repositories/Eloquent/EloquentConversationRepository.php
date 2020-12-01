@@ -5,6 +5,7 @@ namespace Modules\Ichat\Repositories\Eloquent;
 use Modules\Ichat\Repositories\ConversationRepository;
 use Modules\Core\Repositories\Eloquent\EloquentBaseRepository;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Arr;
 
 class EloquentConversationRepository extends EloquentBaseRepository implements ConversationRepository
 {
@@ -123,7 +124,7 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
     //$data['sender_id'] = Auth::user()->id;
     $conversation = $this->model->create($data);
     if ($conversation) {
-      $conversation->users()->sync(array_get($data, 'users', []));
+      $conversation->users()->sync(Arr::get($data, 'users', []));
     }
     return $conversation;
   }

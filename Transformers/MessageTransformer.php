@@ -2,11 +2,11 @@
 
 namespace Modules\Ichat\Transformers;
 
-use Illuminate\Http\Resources\Json\Resource;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Iprofile\Transformers\UserTransformer;
 use Illuminate\Support\Facades\Auth;
 
-class MessageTransformer extends Resource
+class MessageTransformer extends JsonResource
 {
   public function toArray($request)
   {

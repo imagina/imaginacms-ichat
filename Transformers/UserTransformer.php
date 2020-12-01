@@ -2,11 +2,11 @@
 
 namespace Modules\Ichat\Transformers;
 
-use Illuminate\Http\Resources\Json\Resource;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Ihelpers\Transformers\BaseApiTransformer;
 use Cartalyst\Sentinel\Activations\EloquentActivation as Activation;
 
-class UserTransformer extends Resource
+class UserTransformer extends JsonResource
 {
   public function toArray($request)
   {
