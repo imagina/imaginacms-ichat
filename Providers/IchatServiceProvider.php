@@ -7,6 +7,7 @@ use Modules\Core\Traits\CanPublishConfiguration;
 use Modules\Core\Events\BuildingSidebar;
 use Modules\Core\Events\LoadingBackendTranslations;
 use Modules\Ichat\Events\Handlers\RegisterIchatSidebar;
+use Illuminate\Support\Arr;
 
 class IchatServiceProvider extends ServiceProvider
 {
@@ -29,7 +30,7 @@ class IchatServiceProvider extends ServiceProvider
       //$this->app['events']->listen(BuildingSidebar::class, RegisterIchatSidebar::class);
 
       /*$this->app['events']->listen(LoadingBackendTranslations::class, function (LoadingBackendTranslations $event) {
-          $event->load('messages', array_dot(trans('ichat::messages')));
+          $event->load('messages', Arr::dot(trans('ichat::messages')));
           // append translations
 
       });*/
