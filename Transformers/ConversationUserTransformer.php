@@ -15,7 +15,7 @@ class ConversationUserTransformer extends JsonResource
       'conversationId' => $this->when( $this->conversation_id, $this->conversation_id ),
       'userId' => $this->when( $this->user_id, $this->user_id ),
       'lastMessageReaded' => $this->last_message_readed,
-      'user' => new UserTransformer ( $this->user ),
+      'user' => new UserTransformer ( $this->whenLoaded('user') ),
       'conversation' => new ConversationTransformer ( $this->whenLoaded('conversation') ),
 
     ];
