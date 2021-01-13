@@ -72,9 +72,15 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
           $query->where('user_id', Auth::id());
         });
       }
-
-
     }
+    
+    if(!isset($params->permissions["ichat.conversations.index-all"]) ||
+      !$params->permissions["ichat.conversations.index-all"]){
+        $query->wherehas('users', function ($query){
+          $query->where('user_id', Auth::id());
+        });
+    }
+    
     /*== FIELDS ==*/
     if (isset($params->fields) && count($params->fields))
       $query->select($params->fields);
@@ -86,6 +92,7 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
       return $query->get();
     }
   }
+  
   public function getItem($criteria, $params = false)
   {
     //Initialize query
@@ -116,9 +123,22 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
         // find by specific attribute or by id
         $query->where($field ?? 'id', $criteria);
     }
+    
+    if(!isset($params->filter->field)){
+      $query->where('id', $criteria);
+    }
+  
+    if(!isset($params->permissions["ichat.conversations.index-all"]) ||
+      !$params->permissions["ichat.conversations.index-all"]){
+      $query->wherehas('users', function ($query){
+        $query->where('user_id', Auth::id());
+      });
+    }
+    
     /*== REQUEST ==*/
     return $query->first();
   }
+  
   public function create($data)
   {
     //$data['sender_id'] = Auth::user()->id;
@@ -126,8 +146,12 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
     if ($conversation) {
       $conversation->users()->sync(Arr::get($data, 'users', []));
     }
+  
+    $conversation = $this->getItem($conversation->id, (object)["include" => ["users"]]);
+    
     return $conversation;
   }
+  
   public function updateBy($criteria, $data, $params = false)
   {
     /*== initialize query ==*/
