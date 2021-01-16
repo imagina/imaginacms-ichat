@@ -25,13 +25,12 @@ class Conversation extends Model
 
   public function users()
   {
-    $driver = config('asgard.user.config.driver');
-    return $this->belongsToMany("Modules\\User\\Entities\\{$driver}\\User", 'ichat__conversation_user');
+    $entityPath = "Modules\\User\\Entities\\" . config('asgard.user.config.driver') . "\\User";
+    return $this->belongsToMany($entityPath, 'ichat__conversation_user')->withTimestamps();
   }
 
   public function conversationUsers()
   {
     return $this->hasMany('Modules\Ichat\Entities\ConversationUser');
   }
-
 }

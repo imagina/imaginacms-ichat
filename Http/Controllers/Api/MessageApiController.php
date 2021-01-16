@@ -2,40 +2,50 @@
 
 namespace Modules\Ichat\Http\Controllers\Api;
 
-// Requests & Response
-use Modules\Ichat\Http\Requests\CreateMessageRequest;
-use Modules\Ichat\Http\Requests\UpdateMessageRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-
-// Base Api
 use Modules\Ihelpers\Http\Controllers\Api\BaseApiController;
-
-// Transformers
-use Modules\Ichat\Transformers\MessageTransformer;
-
-// Entities
-use Modules\Ichat\Entities\Message;
-
-// Repositories
 use Modules\Ichat\Repositories\MessageRepository;
-
-// Events
-use Modules\Ichat\Events\NewMessage;
-
+use Modules\Ichat\Transformers\MessageTransformer;
+use Modules\Ichat\Http\Requests\CreateMessageRequest;
+use Modules\Ichat\Http\Requests\UpdateMessageRequest;
 use Illuminate\Support\Facades\Auth;
 
-use Modules\Notification\Services\Notification as PushNotification;
 
 class MessageApiController extends BaseApiController
 {
   private $message;
-  private $notificationP;
 
-  public function __construct(MessageRepository $message, PushNotification $notificationP)
+  public function __construct(MessageRepository $message)
   {
     $this->message = $message;
-    $this->notificationP= $notificationP;
+  }
+
+  /**
+   * CREATE A ITEM
+   *
+   * @param Request $request
+   * @return mixed
+   */
+  public function create(Request $request)
+  {
+    \DB::beginTransaction();
+    try {
+      $data = $request->input('attributes') ?? [];//Get data
+      //Validate Request
+      $this->validateRequestApi(new CreateMessageRequest($data));
+      //Create item
+      $message = $this->message->create($data);
+      //Response
+      $response = ["data" => new MessageTransformer($message)];
+      \DB::commit(); //Commit to Data Base
+    } catch (\Exception $e) {
+      \DB::rollback();//Rollback to Data Base
+      $status = $this->getStatusError($e->getCode());
+      $response = ["errors" => $e->getMessage()];
+    }
+    //Return response
+    return response()->json($response ?? ["data" => "Request successful"], $status ?? 200);
   }
 
   /**
@@ -51,11 +61,7 @@ class MessageApiController extends BaseApiController
       //Request to Repository
       $data = $this->message->getItemsBy($params);
       //Response
-      if(isset($params->filter->count)){
-        $response = ["data" => $data->count()];
-      } else {
-        $response = ["data" => MessageTransformer::collection($data)];
-      }
+      $response = ["data" => MessageTransformer::collection($data)];
       //If request pagination add meta-page
       $params->page ? $response["meta"] = ["page" => $this->pageTransformer($data)] : false;
     } catch (\Exception $e) {
@@ -94,43 +100,8 @@ class MessageApiController extends BaseApiController
   }
 
   /**
-   * CREATE A ITEM
-   *
-   * @param Request $request
-   * @return mixed
-   */
-  public function create(Request $request)
-  {
-    \DB::beginTransaction();
-    try {
-      $data = $request->input('attributes') ?? [];//Get data
-      //Validate Request
-      $this->validateRequestApi(new CreateMessageRequest($data));
-      //Create item
-      $message = $this->message->create($data);
-
-      $conversationUsers = $message->conversation->conversationUsers;
-      foreach ($conversationUsers as $conversationUser){
-        if ($conversationUser->user_id != Auth::user()->id){
-          $this->notificationP->to($conversationUser->user_id)->push( trans('ichat::messages.notification.newMessage') , $message->body, '', '');
-        }
-      }
-
-      //Response
-      $response = ["data" => new MessageTransformer($message)];
-      \DB::commit(); //Commit to Data Base
-    } catch (\Exception $e) {
-      \DB::rollback();//Rollback to Data Base
-      $status = $this->getStatusError($e->getCode());
-      $response = ["errors" => $e->getMessage()];
-    }
-    //Return response
-    return response()->json($response ?? ["data" => "Request successful"], $status ?? 200);
-  }
-
-  /**
    * Update the specified resource in storage.
-   * @param  Request $request
+   * @param Request $request
    * @return Response
    */
   public function update($criteria, Request $request)
@@ -176,5 +147,4 @@ class MessageApiController extends BaseApiController
     }
     return response()->json($response, $status ?? 200);
   }
-
 }
