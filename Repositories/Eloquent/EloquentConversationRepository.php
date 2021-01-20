@@ -40,7 +40,7 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
     if (in_array('*', $params->include)) {//If Request all relationships
       $query->with([]);
     } else {//Especific relationships
-      $includeDefault = ['users','conversationUsers'];//Default relationships
+      $includeDefault = ['users', 'conversationUsers'];//Default relationships
       if (isset($params->include))//merge relations with default relationships
         $includeDefault = array_merge($includeDefault, $params->include);
       $query->with($includeDefault);//Add Relationships to query
@@ -68,13 +68,10 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
       }
     }
 
-    //Validate permission index all
-    if (!isset($params->permissions["ichat.conversations.index-all"]) ||
-      !$params->permissions["ichat.conversations.index-all"]) {
-      $query->wherehas('users', function ($query) {
-        $query->where('user_id', Auth::id());
-      });
-    }
+    //Limit only to current user
+    $query->wherehas('users', function ($query) {
+      $query->where('user_id', Auth::id());
+    });
 
     /*== FIELDS ==*/
     if (isset($params->fields) && count($params->fields))
@@ -97,7 +94,7 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
     if (in_array('*', $params->include)) {//If Request all relationships
       $query->with([]);
     } else {//Especific relationships
-      $includeDefault = ['users','conversationUsers'];//Default relationships
+      $includeDefault = ['users', 'conversationUsers'];//Default relationships
       if (isset($params->include))//merge relations with default relationships
         $includeDefault = array_merge($includeDefault, $params->include);
       $query->with($includeDefault);//Add Relationships to query
@@ -111,13 +108,10 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
         $field = $filter->field;
     }
 
-    //Limit to current user
-    if (!isset($params->permissions["ichat.conversations.index-all"]) ||
-      !$params->permissions["ichat.conversations.index-all"]) {
-      $query->wherehas('users', function ($query) {
-        $query->where('user_id', Auth::id());
-      });
-    }
+    //Limit only to current user
+    $query->wherehas('users', function ($query) {
+      $query->where('user_id', Auth::id());
+    });
 
     /*== FIELDS ==*/
     if (isset($params->fields) && count($params->fields))
