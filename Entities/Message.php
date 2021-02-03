@@ -3,6 +3,7 @@
 namespace Modules\Ichat\Entities;
 
 use Illuminate\Database\Eloquent\Model;
+use Modules\Ichat\Events\MessageWasSaved;
 
 class Message extends Model
 {
@@ -13,8 +14,12 @@ class Message extends Model
     'body',
     'attached',
     'conversation_id',
-    'user_id',
-    'is_seen',
+    'user_id'
+  ];
+
+  //Events
+  protected $dispatchesEvents = [
+    'saved' => MessageWasSaved::class
   ];
 
   public function conversation()
@@ -26,10 +31,5 @@ class Message extends Model
   {
     $driver = config('asgard.user.config.driver');
     return $this->belongsTo("Modules\\User\\Entities\\{$driver}\\User", 'user_id');
-  }
-
-  public function reads()
-  {
-    return $this->hasMany('Modules\Ichat\Entities\Read');
   }
 }

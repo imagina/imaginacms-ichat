@@ -14,10 +14,12 @@ class ConversationTransformer extends JsonResource
       'id' => $this->id,
       'private' => $this->private ? true : false,
       "lastMessageReaded" => $this->present()->lastMessageReaded,
-      'users' => UserTransformer::collection( $this->whenLoaded('users') ),
+      "unReadMessages" => $this->present()->unReadMessages,
+      'users' => UserTransformer::collection($this->whenLoaded('users')),
       'messages' => MessageTransformer::collection($this->whenLoaded('messages')),
       'conversationUsers' => ConversationUserTransformer::collection($this->whenLoaded('conversationUsers')),
     ];
+
     return $data;
   }
 }

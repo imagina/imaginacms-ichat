@@ -3,7 +3,6 @@
 use Illuminate\Routing\Router;
 
 $router->group(['prefix' => '/conversations'], function (Router $router) {
-
   $router->post('/', [
     'as' => 'api.ichat.conversations.create',
     'uses' => 'ConversationApiController@create',
