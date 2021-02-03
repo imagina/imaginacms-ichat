@@ -2,6 +2,7 @@
 
 return [
   'ichat.conversations' => [
+    'manage' => 'ichat::messages.manage resource',
     'index' => 'ichat::messages.list resource',
     'index-all' => 'ichat::messages.index-all resource',
     'create' => 'ichat::messages.create resource',
@@ -9,6 +10,7 @@ return [
     'destroy' => 'ichat::messages.destroy resource',
   ],
     'ichat.messages' => [
+        'manage' => 'ichat::messages.manage resource',
         'index' => 'ichat::messages.list resource',
         'index-all' => 'ichat::messages.index-all resource',
         'create' => 'ichat::messages.create resource',

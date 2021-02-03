@@ -146,7 +146,7 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
     if ($conversation) {
       $conversation->users()->sync(Arr::get($data, 'users', []));
     }
-  
+    $conversation->with(["users"]);
     $conversation = $this->getItem($conversation->id, (object)["include" => ["users"]]);
     
     return $conversation;
