@@ -15,6 +15,9 @@ class ConversationService
     }
 
     public function create($data){
-        $this->conversation->create($data);
+        try{
+            $this->conversation->create($data);
+        } catch (\Exception $e) {
+        }
     }
 }
