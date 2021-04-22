@@ -14,19 +14,7 @@ class ConversationService
         $this->conversation = $conversation;
     }
 
-    public function create($entity, $users){
-        $entityNamespace = get_class($entity);
-        $entityPath = explode('\\', $entityNamespace);
-        $entityName = end($entityPath);
-        $moduleName = strtolower($entityPath[1]);
-        if(setting("{$moduleName}::enableChat") === '1') {
-            $conversationData = [
-               'users' => $users,
-               'private' => 1,
-               'entity_id' => $entity->id,
-               'entity_type' => $entityNamespace,
-            ];
-            $this->conversation->create($conversationData);
-        }
+    public function create($data){
+        $this->conversation->create($data);
     }
 }
