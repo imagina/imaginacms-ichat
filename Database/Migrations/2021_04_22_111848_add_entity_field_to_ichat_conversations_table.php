@@ -14,8 +14,8 @@ class AddEntityFieldToIchatConversationsTable extends Migration
     public function up()
     {
         Schema::table('ichat__conversations', function (Blueprint $table) {
-            $table->integer('entity_id')->unsigned()->after('private');
-            $table->string('entity_type')->after('private');
+            $table->integer('entity_id')->unsigned()->nullable()->after('private');
+            $table->string('entity_type')->nullable()->after('private');
         });
     }
 
