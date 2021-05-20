@@ -30,6 +30,7 @@ class MessageWasSavedListener
   {
     //Get message
     $message = $event->message;
+    $message->user;
     //update last message read
     ConversationUser::where('conversation_id', $message->conversation_id)
       ->where('user_id', $message->user_id)->update(['last_message_readed' => $message->id]);
