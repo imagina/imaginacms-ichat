@@ -16,7 +16,14 @@ class Conversation extends Model
 
   protected $fillable = [
     'private',
+    'entity_type',
+    'entity_id',
   ];
+
+  public function entity()
+  {
+    return $this->belongsTo($this->entity_type,'entity_id');
+  }
 
   public function messages()
   {
