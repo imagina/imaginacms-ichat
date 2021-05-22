@@ -117,6 +117,8 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
   
     //Event to ADD media
     event(new CreateMedia($message, $data));
+    
+    return $message;
   }
 
   public function updateBy($criteria, $data, $params = false)
