@@ -9,6 +9,9 @@ use Modules\Ichat\Events\MessageWasCreated;
 use Modules\Ichat\Events\NewMessageInConversation;
 use Modules\Ichat\Events\ConversationUserWasUpdated;
 use Modules\Ichat\Events\MessageWasRetrieved;
+use Modules\Ihelpers\Events\CreateMedia;
+use Modules\Ihelpers\Events\DeleteMedia;
+use Modules\Ihelpers\Events\UpdateMedia;
 
 class EloquentMessageRepository extends EloquentBaseRepository implements MessageRepository
 {
@@ -107,6 +110,14 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
     /*== REQUEST ==*/
     return $query->where($field ?? 'id', $criteria)->first();
   }
+  
+  public function create($data)
+  {
+    $message = $this->model->create($data);
+  
+    //Event to ADD media
+    event(new CreateMedia($message, $data));
+  }
 
   public function updateBy($criteria, $data, $params = false)
   {
@@ -124,7 +135,18 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
 
     /*== REQUEST ==*/
     $model = $query->where($field ?? 'id', $criteria)->first();
-    return $model ? $model->update((array)$data) : false;
+  
+    if ($model) {
+  
+      $model->update($data);
+  
+      //Event to Update media
+      event(new UpdateMedia($model, $data));
+  
+      return $model;
+    }
+    
+    return false;
   }
 
   public function deleteBy($criteria, $params = false)
@@ -143,5 +165,8 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
     /*== REQUEST ==*/
     $model = $query->where($field ?? 'id', $criteria)->first();
     $model ? $model->delete() : false;
+  
+    if(isset($model->id))
+      event(new DeleteMedia($model->id, get_class($model)));
   }
 }

@@ -4,11 +4,13 @@ namespace Modules\Ichat\Entities;
 
 use Illuminate\Database\Eloquent\Model;
 use Modules\Ichat\Events\MessageWasSaved;
+use Modules\Media\Support\Traits\MediaRelation;
 
 class Message extends Model
 {
   protected $table = 'ichat__messages';
-
+  use MediaRelation;
+  
   protected $fillable = [
     'type',
     'body',
