@@ -19,6 +19,12 @@ class ConversationPresenter extends Presenter
     return null;
   }
 
+  public function lastMessage()
+  {
+     $message = $this->messages->sortBy('created_at',SORT_REGULAR,true)->first();
+     return $message;
+  }
+
   //Validate if has unread messages
   public function unReadMessages()
   {

@@ -40,9 +40,10 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
     if (in_array('*', $params->include)) {//If Request all relationships
       $query->with([]);
     } else {//Especific relationships
-      $includeDefault = ['users', 'conversationUsers'];//Default relationships
+      $includeDefault = [];//Default relationships
       if (isset($params->include))//merge relations with default relationships
         $includeDefault = array_merge($includeDefault, $params->include);
+      \Log::info($includeDefault);
       $query->with($includeDefault);//Add Relationships to query
     }
 
@@ -94,7 +95,7 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
     if (in_array('*', $params->include)) {//If Request all relationships
       $query->with([]);
     } else {//Especific relationships
-      $includeDefault = ['users', 'conversationUsers'];//Default relationships
+      $includeDefault = [];//Default relationships
       if (isset($params->include))//merge relations with default relationships
         $includeDefault = array_merge($includeDefault, $params->include);
       $query->with($includeDefault);//Add Relationships to query

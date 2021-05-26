@@ -23,7 +23,7 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
     if (in_array('*', $params->include)) {//If Request all relationships
       $query->with([]);
     } else {//Especific relationships
-      $includeDefault = ['user'];//Default relationships
+      $includeDefault = [];//Default relationships
       if (isset($params->include))//merge relations with default relationships
         $includeDefault = array_merge($includeDefault, $params->include);
       $query->with($includeDefault);//Add Relationships to query
@@ -110,14 +110,18 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
     /*== REQUEST ==*/
     return $query->where($field ?? 'id', $criteria)->first();
   }
-  
+
   public function create($data)
   {
     $message = $this->model->create($data);
-  
+
+    $conversation = $message->conversation;
+
+    $message->conversation()->update(['private'=>$conversation->private]);
+
     //Event to ADD media
     event(new CreateMedia($message, $data));
-    
+
     return $message;
   }
 
@@ -137,17 +141,17 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
 
     /*== REQUEST ==*/
     $model = $query->where($field ?? 'id', $criteria)->first();
-  
+
     if ($model) {
-  
+
       $model->update($data);
-  
+
       //Event to Update media
       event(new UpdateMedia($model, $data));
-  
+
       return $model;
     }
-    
+
     return false;
   }
 
@@ -167,7 +171,7 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
     /*== REQUEST ==*/
     $model = $query->where($field ?? 'id', $criteria)->first();
     $model ? $model->delete() : false;
-  
+
     if(isset($model->id))
       event(new DeleteMedia($model->id, get_class($model)));
   }
