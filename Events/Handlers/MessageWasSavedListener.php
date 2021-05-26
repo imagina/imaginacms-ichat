@@ -30,15 +30,41 @@ class MessageWasSavedListener
   {
     //Get message
     $message = $event->message;
-    $message->user;
-    //update last message read
-    ConversationUser::where('conversation_id', $message->conversation_id)
-      ->where('user_id', $message->user_id)->update(['last_message_readed' => $message->id]);
+
     //Get users to notify message
-    $conversationUsers = $message->conversation->conversationUsers;
-    $usersId = $conversationUsers->whereNotIn('user_id', [Auth::user()->id])->pluck('user_id')->toArray();
+    $usersToNotifyId = $message->conversation->conversationUsers->whereNotIn('user_id', [Auth::user()->id])
+      ->pluck('user_id')->toArray();
+
+    //Manage conversation users info
+    $this->manageConversationUsersInfo($message, $usersToNotifyId);
+
+    //Notify conversation users
+    $this->notifyConversationUsers($message, $usersToNotifyId);
+  }
+
+  //Manage conversation users infor
+  public function manageConversationUsersInfo($message, $usersToNotifyId)
+  {
+    //Update last message info to user who send message
+    ConversationUser::where('conversation_id', $message->conversation_id)
+      ->where('user_id', $message->user_id)->update(['last_message_readed' => $message->id, 'unread_messages_count' => 0]);
+
+    //Update last message info to conversation users
+    foreach ($usersToNotifyId as $userId) {
+      ConversationUser::where('conversation_id', $message->conversation_id)
+        ->where('user_id', $userId)->update(['unread_messages_count' => \DB::raw('(
+            SELECT COUNT(*) FROM ichat__messages
+            WHERE ichat__messages.conversation_id = ichat__conversation_user.conversation_id
+            AND ichat__messages.id > ichat__conversation_user.last_message_readed 
+        )')]);
+    }
+  }
+
+  //Notify to conversations users
+  public function notifyConversationUsers($message, $usersToNotifyId)
+  {
     //Send notification
-    $this->inotification->to(['broadcast' => $usersId])->push([
+    $this->inotification->to(['broadcast' => $usersToNotifyId])->push([
       "title" => "New message",
       "message" => "You have a new message!",
       "link" => url(''),

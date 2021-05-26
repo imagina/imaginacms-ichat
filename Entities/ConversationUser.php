@@ -12,6 +12,7 @@ class ConversationUser extends Model
     'conversation_id',
     'user_id',
     'last_message_readed',
+    'unread_messages_count'
   ];
 
   public function conversation()
