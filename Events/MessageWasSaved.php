@@ -3,6 +3,7 @@
 namespace Modules\Ichat\Events;
 
 use Illuminate\Queue\SerializesModels;
+use Modules\Ichat\Entities\Message;
 
 class MessageWasSaved
 {
@@ -17,7 +18,9 @@ class MessageWasSaved
    */
   public function __construct($message)
   {
-    $this->message = $message;
+    $this->message = Message::with(['user', 'conversation.users', 'conversation.conversationUsers'])
+      ->where('id', $message->id)
+      ->first();
   }
 
   /**
