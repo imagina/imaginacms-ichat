@@ -2,6 +2,7 @@
 
 namespace Modules\Ichat\Repositories\Eloquent;
 
+use Modules\Ichat\Events\MessageWasSaved;
 use Modules\Ichat\Repositories\MessageRepository;
 use Modules\Core\Repositories\Eloquent\EloquentBaseRepository;
 use Illuminate\Support\Facades\Auth;
@@ -21,9 +22,9 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
     $query = $this->model->query();
     /*== RELATIONSHIPS ==*/
     if (in_array('*', $params->include)) {//If Request all relationships
-      $query->with([]);
+      $query->with(['files']);
     } else {//Especific relationships
-      $includeDefault = [];//Default relationships
+      $includeDefault = ['files'];//Default relationships
       if (isset($params->include))//merge relations with default relationships
         $includeDefault = array_merge($includeDefault, $params->include);
       $query->with($includeDefault);//Add Relationships to query
@@ -87,9 +88,9 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
 
     /*== RELATIONSHIPS ==*/
     if (in_array('*', $params->include)) {//If Request all relationships
-      $query->with([]);
+      $query->with(['files']);
     } else {//Especific relationships
-      $includeDefault = [];//Default relationships
+      $includeDefault = ['files'];//Default relationships
       if (isset($params->include))//merge relations with default relationships
         $includeDefault = array_merge($includeDefault, $params->include);
       $query->with($includeDefault);//Add Relationships to query
@@ -113,16 +114,21 @@ class EloquentMessageRepository extends EloquentBaseRepository implements Messag
 
   public function create($data)
   {
+    return \DB::transaction(function () use ($data){
     $message = $this->model->create($data);
-
+  
+    
     $conversation = $message->conversation;
 
     $message->conversation()->update(['private'=>$conversation->private]);
 
     //Event to ADD media
     event(new CreateMedia($message, $data));
+    event(new MessageWasSaved($message));
+    
 
     return $message;
+    }, 5);
   }
 
   public function updateBy($criteria, $data, $params = false)
