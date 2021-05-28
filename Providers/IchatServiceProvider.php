@@ -39,6 +39,7 @@ class IchatServiceProvider extends ServiceProvider
   public function boot()
   {
       $this->publishConfig('ichat', 'permissions');
+      $this->publishConfig('ichat', 'config');
 
       $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
   }

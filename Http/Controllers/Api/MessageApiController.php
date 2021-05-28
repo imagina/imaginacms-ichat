@@ -29,18 +29,19 @@ class MessageApiController extends BaseApiController
    */
   public function create(Request $request)
   {
-    \DB::beginTransaction();
+    
     try {
       $data = $request->input('attributes') ?? [];//Get data
+      
       //Validate Request
       $this->validateRequestApi(new CreateMessageRequest($data));
       //Create item
       $message = $this->message->create($data);
       //Response
-      $response = ["data" => new MessageTransformer($message)];
-      \DB::commit(); //Commit to Data Base
+      $response = ["data" => collect(new MessageTransformer($message))->put("frontId", $data["front_id"] ?? null)];
+   
     } catch (\Exception $e) {
-      \DB::rollback();//Rollback to Data Base
+     \DB::rollback();//Rollback to Data Base
       $status = $this->getStatusError($e->getCode());
       $response = ["errors" => $e->getMessage()];
     }
