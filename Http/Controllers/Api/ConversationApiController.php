@@ -84,7 +84,7 @@ class ConversationApiController extends BaseApiController
       //Request to Repository
       $data = $this->conversation->getItem($criteria, $params);
       //Break if no found item
-      if (!$data) throw new Exception('Item not found', 204);
+      if (!$data) throw new \Exception('Item not found', 204);
       //Response
       $response = ["data" => new ConversationTransformer($data)];
       //If request pagination add meta-page

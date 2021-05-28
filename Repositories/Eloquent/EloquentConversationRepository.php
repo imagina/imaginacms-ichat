@@ -43,7 +43,7 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
       $includeDefault = [];//Default relationships
       if (isset($params->include))//merge relations with default relationships
         $includeDefault = array_merge($includeDefault, $params->include);
-      \Log::info($includeDefault);
+
       $query->with($includeDefault);//Add Relationships to query
     }
 
@@ -109,6 +109,7 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
         $field = $filter->field;
     }
 
+    if(isset($params->permissions["ichat.conversations.index-all"]) && !$params->permissions["ichat.conversations.index-all"])
     //Limit only to current user
     $query->wherehas('users', function ($query) {
       $query->where('user_id', Auth::id());
@@ -119,7 +120,7 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
       $query->select($params->fields);
 
     /*== REQUEST ==*/
-    return $query->where($field ?? 'id', $criteria)->first();
+     return $query->where($field ?? 'id', $criteria)->first();
   }
 
   public function updateBy($criteria, $data, $params = false)
