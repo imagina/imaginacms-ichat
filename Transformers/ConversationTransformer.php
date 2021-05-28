@@ -13,7 +13,7 @@ class ConversationTransformer extends JsonResource
     $data = [
       'id' => $this->id,
       'private' => $this->private ? true : false,
-      'status' => $this->status == 1 ? '1' : '0',
+      'status' => $this->status ?? '1',
       /*"lastMessageReaded" => $this->present()->lastMessageReaded,
       "unReadMessages" => $this->present()->unReadMessages,*/
       'lastMessage' => new MessageTransformer($this->whenLoaded('lastMessage')),

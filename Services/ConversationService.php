@@ -20,4 +20,11 @@ class ConversationService
         } catch (\Exception $e) {
         }
     }
+
+    public function update($conversationId, $data){
+        try {
+            $this->conversation->updateBy($conversationId, $data);
+        }catch (\Exception $e){
+        }
+    }
 }
