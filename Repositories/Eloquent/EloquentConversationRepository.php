@@ -67,6 +67,12 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
         $orderWay = $filter->order->way ?? 'desc';//Default way
         $query->orderBy($orderByField, $orderWay);//Add order to query
       }
+  
+      //by ids
+      if (isset($filter->ids) && !empty($filter->ids)) {
+        is_array($filter->ids) ? true : $filter->ids = [$filter->ids];
+        $query->whereIn('ichat__conversations.id', $filter->ids);
+      }
     }
 
     //Limit only to current user
@@ -82,6 +88,7 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
       return $query->paginate($params->take);
     } else {
       $params->take ? $query->take($params->take) : false;//Take
+
       return $query->get();
     }
   }
