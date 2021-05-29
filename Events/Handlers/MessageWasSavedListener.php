@@ -72,7 +72,7 @@ class MessageWasSavedListener
         "name" => "inotification.chat.message",
         "data" => new MessageTransformer($message)
       ],
-      "setting" => ["saveInDatabase" => 1]
+      "setting" => ["saveInDatabase" => 0]
     ]);
   }
 }
