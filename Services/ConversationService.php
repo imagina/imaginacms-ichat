@@ -16,9 +16,11 @@ class ConversationService
 
     public function create($data){
         try{
-            $this->conversation->create($data);
+            $conversation = $this->conversation->create($data);
+            return $conversation;
         } catch (\Exception $e) {
         }
+        return false;
     }
 
     public function update($conversationId, $data){
