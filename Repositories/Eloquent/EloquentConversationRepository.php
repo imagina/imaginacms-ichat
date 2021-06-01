@@ -9,27 +9,34 @@ use Illuminate\Support\Arr;
 
 class EloquentConversationRepository extends EloquentBaseRepository implements ConversationRepository
 {
-  public function create($data)
-  {
-    //Validate if conversation already exist
-    $conversation = $this->model->whereHas('users', function ($q) use ($data) {
-      $q->select('conversation_id')->whereIn('user_id', $data['users'])->groupBy('conversation_id')
-        ->having(\DB::raw('count(*)'), '=', count($data['users']));
-    })->with('users')->first();
+    public function create($data)
+    {
+        $conversation = null;
+        //if data has entity_type and entity_id, then creates the conversation
+        if(!empty($data['entity_type']) && !empty($data['entity_id'])){
+            $conversation = $this->model->create($data);
+        }else{
+            //Validate if conversation already exist
+            $conversation = $this->model->whereHas('users', function ($q) use ($data) {
+                $q->select('conversation_id')->whereIn('user_id', $data['users'])->groupBy('conversation_id')
+                    ->having(\DB::raw('count(*)'), '=', count($data['users']));
+            })->with('users')->first();
 
-    //Create conversation
-    if (!$conversation) {
-      $conversation = $this->model->create($data);
-      //Sync Users relation
-      if ($conversation) {
-        $conversation->users()->sync(Arr::get($data, 'users', []));//Sync users
-        $conversation = $this->getItem($conversation->id, (object)["include" => ["users"]]); //Get model with user relation
-      }
+            //Create conversation
+            if (!$conversation) {
+                $conversation = $this->model->create($data);
+            }
+        }
+
+        //Sync Users relation
+        if ($conversation) {
+            $conversation->users()->sync(Arr::get($data, 'users', []));//Sync users
+            $conversation = $this->getItem($conversation->id, (object)["include" => ["users"]]); //Get model with user relation
+        }
+
+        //Response
+        return $conversation;
     }
-
-    //Response
-    return $conversation;
-  }
 
   public function getItemsBy($params)
   {
@@ -67,7 +74,7 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
         $orderWay = $filter->order->way ?? 'desc';//Default way
         $query->orderBy($orderByField, $orderWay);//Add order to query
       }
-  
+
       //by ids
       if (isset($filter->ids) && !empty($filter->ids)) {
         is_array($filter->ids) ? true : $filter->ids = [$filter->ids];
