@@ -68,11 +68,12 @@ class MessageWasSavedListener
       "title" => "New message",
       "message" => "You have a new message!",
       "link" => url(''),
+      "isAction" => true,
       "frontEvent" => [
         "name" => "inotification.chat.message",
         "data" => new MessageTransformer($message)
       ],
-      "setting" => ["saveInDatabase" => 0]
+      "setting" => ["saveInDatabase" => 1]
     ]);
   }
 }
