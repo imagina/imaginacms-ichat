@@ -1,6 +1,11 @@
 <?php
+
 return [
-  "message"  => [
+  "sidebar" => [
+    "adminMessages" => "Chat"
+  ],
+  "message" => [
     "noMessages" => "There isn't messages..."
   ]
 ];
+
