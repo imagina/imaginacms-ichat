@@ -40,6 +40,7 @@ class IchatServiceProvider extends ServiceProvider
   {
       $this->publishConfig('ichat', 'permissions');
       $this->publishConfig('ichat', 'config');
+    $this->mergeConfigFrom($this->getModuleConfigFilePath('ichat', 'cmsPages'), "asgard.ichat.cmsPages");
 
       $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
   }
