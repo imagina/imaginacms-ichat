@@ -82,10 +82,20 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
       }
     }
 
-    //Limit only to current user
-    $query->wherehas('users', function ($query) {
-      $query->where('user_id', Auth::id());
-    });
+    //Get all public conversations and own chats
+    if (isset($params->permissions["ichat.conversations.index-all"])) {
+      if ($params->permissions["ichat.conversations.index-all"]) {
+        $query->where(function ($q) {
+          $q->where("private", "0")->orWherehas('users', function ($query) {
+            $query->where('user_id', Auth::id());
+          });
+        });
+      }
+    } else {//Get only the own chats
+      $query->wherehas('users', function ($query) {
+        $query->where('user_id', Auth::id());
+      });
+    }
 
     /*== FIELDS ==*/
     if (isset($params->fields) && count($params->fields))
