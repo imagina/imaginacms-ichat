@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Modules\Ihelpers\Http\Controllers\Api\BaseApiController;
 use Modules\Ichat\Repositories\MessageRepository;
+use Modules\Ichat\Entities\Provider;
 use Modules\Ichat\Transformers\MessageTransformer;
 use Modules\Ichat\Http\Requests\CreateMessageRequest;
 use Modules\Ichat\Http\Requests\UpdateMessageRequest;
@@ -29,17 +30,19 @@ class MessageApiController extends BaseApiController
    */
   public function create(Request $request)
   {
-    
+
     try {
       $data = $request->input('attributes') ?? [];//Get data
-      
+
       //Validate Request
       $this->validateRequestApi(new CreateMessageRequest($data));
       //Create item
       $message = $this->message->create($data);
+      //Emit message to provider
+      $this->emitMessageForProvider($message);
       //Response
       $response = ["data" => collect(new MessageTransformer($message))->put("frontId", $data["front_id"] ?? null)];
-   
+
     } catch (\Exception $e) {
      \DB::rollback();//Rollback to Data Base
       $status = $this->getStatusError($e->getCode());
@@ -147,5 +150,36 @@ class MessageApiController extends BaseApiController
       $response = ["errors" => $e->getMessage()];
     }
     return response()->json($response, $status ?? 200);
+  }
+
+  /** Emit message for providers*/
+  public function emitMessageForProvider($message)
+  {
+    try {
+      //Search if conversation is of the provider
+      $provider = Provider::where("name", $message->conversation->entity_type ?? "null")->first();
+
+      //Emit message
+      if ($provider) {
+        $client = new \GuzzleHttp\Client();
+        $response = $client->request('POST', $provider->end_point, [
+          'body' => json_encode([
+            "attributes" => [
+              "provider" => $provider->name,
+              "conversationId" => $message->conversation->entity_id,
+              "message" => $message->body
+            ]
+          ]),
+          'headers' => [
+            'Content-Type' => 'application/json',
+            'Authorization' => $provider->token,
+          ]
+        ]);
+        //Log
+        \Log::info("[send-message-provider]:: Emit message to provider - status code: " . $response->getStatusCode());
+      }
+    } catch (\Exception $e) {
+      \Log::info("[send-message-provider]::Error " . $e->getMessage());
+    }
   }
 }

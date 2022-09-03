@@ -98,6 +98,19 @@ class IchatServiceProvider extends ServiceProvider
         return new \Modules\Ichat\Repositories\Cache\CacheUserDecorator($repository);
       }
     );
-    // add bindings
+            $this->app->bind(
+            'Modules\Ichat\Repositories\ProviderRepository',
+            function () {
+                $repository = new \Modules\Ichat\Repositories\Eloquent\EloquentProviderRepository(new \Modules\Ichat\Entities\Provider());
+
+                if (! config('app.cache')) {
+                    return $repository;
+                }
+
+                return new \Modules\Ichat\Repositories\Cache\CacheProviderDecorator($repository);
+            }
+        );
+// add bindings
+
   }
 }
