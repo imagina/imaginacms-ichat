@@ -10,8 +10,7 @@ class CreateProviderMessageRequest extends BaseFormRequest
   {
     return [
       'provider' => 'required',
-      'conversationId' => 'required',
-      'message' => 'required',
+      'conversation_id' => 'required'
     ];
   }
 

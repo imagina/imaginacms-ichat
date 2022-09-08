@@ -14,7 +14,7 @@ use Modules\User\Entities\Sentinel\User;
 use Modules\Ichat\Transformers\MessageTransformer;
 use Modules\Ichat\Http\Requests\CreateProviderMessageRequest;
 
-class ProviderMessagesApiController extends BaseApiController
+class ProviderConversationApiController extends BaseApiController
 {
   private $userEntity;
   private $userRepository;
@@ -44,6 +44,7 @@ class ProviderMessagesApiController extends BaseApiController
   {
     \DB::beginTransaction();
     try {
+      $response = ["data" => []];
       $data = $request->input('attributes') ?? [];//Get data
       //Validate Request
       $this->validateRequestApi(new CreateProviderMessageRequest($data));
@@ -55,14 +56,16 @@ class ProviderMessagesApiController extends BaseApiController
       $data["users"] = [$user->id];
       //Get the conversation
       $conversation = $this->getConversation($data);
+      $response["data"]['conversation'] = $conversation;
       //Insert the message
-      $message = $this->messageRepository->create([
-        "conversation_id" => $conversation->id,
-        "user_id" => $user->id,
-        "body" => $data["message"],
-      ]);
-      //Response
-      $response = ["data" => new MessageTransformer($message)];
+      if (isset($data["message"]) && $data["message"]) {
+        $message = $this->messageRepository->create([
+          "conversation_id" => $conversation->id,
+          "user_id" => $user->id,
+          "body" => $data["message"],
+        ]);
+        $response["data"]['message'] = $message;
+      }
       \DB::commit(); //Commit to Data Base
     } catch (\Exception $e) {
       \DB::rollback();//Rollback to Data Base
@@ -77,7 +80,7 @@ class ProviderMessagesApiController extends BaseApiController
   private function getUserProvider($data)
   {
     //Instance de user email
-    $email = "{$data["conversationId"]}@{$data["provider"]}.com";
+    $email = "{$data["conversation_id"]}@{$data["provider"]}.com";
     //Validate if exist
     $user = $this->userEntity->where("email", $email)->first();
     //Create user if not exist
@@ -85,8 +88,8 @@ class ProviderMessagesApiController extends BaseApiController
       //Instance the user data
       $userData = [
         "email" => $email,
-        "first_name" => $data["firstName"] ?? $data["conversationId"],
-        "last_name" => $data["lastName"] ?? $data["provider"],
+        "first_name" => $data["first_name"] ?? $data["conversation_id"],
+        "last_name" => $data["last_name"] ?? $data["provider"],
         "password" => $this->generatePassword()
       ];
       //Create user
@@ -101,14 +104,14 @@ class ProviderMessagesApiController extends BaseApiController
   {
     //Search by a conversation
     $conversation = $this->conversation->where("entity_type", $data['provider'])
-      ->where("entity_id", $data["conversationId"])->first();
+      ->where("entity_id", $data["conversation_id"])->first();
     //Create the conversation if not exist
     if (!$conversation) {
       //Instance the conversation data
       $conversationData = [
         "private" => 0,
         "entity_type" => $data["provider"],
-        "entity_id" => $data["conversationId"],
+        "entity_id" => $data["conversation_id"],
         "users" => $data["users"]
       ];
       //Create the conversation data
