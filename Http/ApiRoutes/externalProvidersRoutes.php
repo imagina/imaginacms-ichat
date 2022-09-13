@@ -8,4 +8,9 @@ $router->group(['prefix' => '/provider/conversations'], function (Router $router
     'uses' => 'ProviderConversationApiController@create',
     'middleware' => ['auth:api']
   ]);
+  $router->get('/file/{fileId}', [
+    'as' => 'api.ichat.external.file.get',
+    'uses' => 'ProviderConversationApiController@getFile',
+    //'middleware' => ['auth:api']
+  ]);
 });

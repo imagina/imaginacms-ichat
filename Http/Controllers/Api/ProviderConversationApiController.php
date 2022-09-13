@@ -9,6 +9,7 @@ use Modules\Ihelpers\Http\Controllers\Api\BaseApiController;
 use Modules\Ichat\Repositories\ConversationRepository;
 use Modules\Ichat\Repositories\MessageRepository;
 use Modules\Ichat\Entities\Provider;
+use Modules\Media\Entities\File;
 use Modules\User\Repositories\UserRepository;
 use Modules\User\Entities\Sentinel\User;
 use Modules\Ichat\Transformers\MessageTransformer;
@@ -119,5 +120,12 @@ class ProviderConversationApiController extends BaseApiController
     }
     //Return the conversation
     return $conversation;
+  }
+
+  /** Return chat file */
+  public function getFile($fileId)
+  {
+    $file = File::where("filename", $fileId)->first();
+    return \Storage::disk("privatemedia")->response($file->path->getRelativeUrl());
   }
 }

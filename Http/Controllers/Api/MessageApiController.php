@@ -10,6 +10,7 @@ use Modules\Ichat\Entities\Provider;
 use Modules\Ichat\Transformers\MessageTransformer;
 use Modules\Ichat\Http\Requests\CreateMessageRequest;
 use Modules\Ichat\Http\Requests\UpdateMessageRequest;
+use Modules\Media\Entities\File;
 use Illuminate\Support\Facades\Auth;
 
 
@@ -161,22 +162,40 @@ class MessageApiController extends BaseApiController
 
       //Emit message
       if ($provider) {
+        //Instance the message type
+        $messageType = "text";
+        //Get message attachment
+        if ($message->attached) {
+          $file = $message->files()->where('zone', 'attachment')->first();
+          //Send url to get file
+          $messagaAttachment = \URL::route("api.ichat.external.file.get", ["fileId" => $file->filename]);
+          //Instance the message type
+          $messageType = $file->isImage() ? "image" : ($file->extension == "mp3" ? "audio" : "document");
+        }
+
+        //Send request
         $client = new \GuzzleHttp\Client();
-        $response = $client->request('POST', $provider->end_point, [
-          'body' => json_encode([
-            "attributes" => [
-              "provider" => $provider->name,
-              "conversationId" => $message->conversation->entity_id,
-              "message" => $message->body
+        $response = $client->request('POST',
+          $provider->end_point,
+          //'https://nflow.imaginacolombia.com/webhook-test/14bc8ef6-c757-4c62-8301-b4b6f355ce60',
+          [
+            'body' => json_encode([
+              "attributes" => [
+                "provider" => $provider->name,
+                "type" => $messageType,
+                "message" => $message->body,
+                "conversationId" => $message->conversation->entity_id,
+                "file" => $messagaAttachment ?? null
+              ]
+            ]),
+            'headers' => [
+              'Content-Type' => 'application/json',
+              'Authorization' => $provider->token,
             ]
-          ]),
-          'headers' => [
-            'Content-Type' => 'application/json',
-            'Authorization' => $provider->token,
           ]
-        ]);
+        );
         //Log
-        \Log::info("[send-message-provider]:: Emit message to provider - status code: " . $response->getStatusCode());
+        \Log::info("[send-message-provider]:: Emit message to provider - Type: {$messageType} - status code: " . $response->getStatusCode());
       }
     } catch (\Exception $e) {
       \Log::info("[send-message-provider]::Error " . $e->getMessage());
