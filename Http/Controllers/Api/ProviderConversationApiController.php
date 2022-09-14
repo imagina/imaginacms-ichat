@@ -14,6 +14,7 @@ use Modules\User\Repositories\UserRepository;
 use Modules\User\Entities\Sentinel\User;
 use Modules\Ichat\Transformers\MessageTransformer;
 use Modules\Ichat\Http\Requests\CreateProviderMessageRequest;
+use Modules\Media\Services\FileService;
 
 class ProviderConversationApiController extends BaseApiController
 {
@@ -47,6 +48,7 @@ class ProviderConversationApiController extends BaseApiController
     try {
       $response = ["data" => []];
       $data = $request->input('attributes') ?? [];//Get data
+      \Log::info("[Provider-Message]::Create" . json_encode($data));
       //Validate Request
       $this->validateRequestApi(new CreateProviderMessageRequest($data));
       //Validate Provider
@@ -58,12 +60,16 @@ class ProviderConversationApiController extends BaseApiController
       //Get the conversation
       $conversation = $this->getConversation($data);
       $response["data"]['conversation'] = $conversation;
+      //Validate if exist a file
+      $fileMessage = $this->getMessageFile($data);
       //Insert the message
-      if (isset($data["message"]) && $data["message"]) {
+      if (isset($data["message"]) || $fileMessage) {
         $message = $this->messageRepository->create([
           "conversation_id" => $conversation->id,
           "user_id" => $user->id,
-          "body" => $data["message"],
+          "body" => $data["message"] ?? "",
+          "attached" => $fileMessage ? $fileMessage->id : null,
+          "medias_single" => $fileMessage ? ["attachment" => $fileMessage->id] : []
         ]);
         $response["data"]['message'] = $message;
       }
@@ -98,6 +104,19 @@ class ProviderConversationApiController extends BaseApiController
     }
     //Return response
     return $user;
+  }
+
+  /** Insert file if exist and return the file entity */
+  private function getMessageFile($data)
+  {
+    //Validate if exist
+    if (!isset($data["file"]) || !$data["file"]) return null;
+    //Instance file service
+    $fileService = app("Modules\Media\Services\FileService");
+    //Get base64 file
+    $uploadedFile = getUploadedFileFromUrl($data["file"]);
+    //Create file
+    return $fileService->store($uploadedFile, 0, 'privatemedia');
   }
 
   /** Return the conversation*/
