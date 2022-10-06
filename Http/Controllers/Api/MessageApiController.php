@@ -6,13 +6,12 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Modules\Ihelpers\Http\Controllers\Api\BaseApiController;
 use Modules\Ichat\Repositories\MessageRepository;
-use Modules\Ichat\Entities\Provider;
+use Modules\Notification\Entities\Provider;
 use Modules\Ichat\Transformers\MessageTransformer;
 use Modules\Ichat\Http\Requests\CreateMessageRequest;
 use Modules\Ichat\Http\Requests\UpdateMessageRequest;
 use Modules\Media\Entities\File;
 use Illuminate\Support\Facades\Auth;
-
 
 class MessageApiController extends BaseApiController
 {
@@ -45,7 +44,7 @@ class MessageApiController extends BaseApiController
       $response = ["data" => collect(new MessageTransformer($message))->put("frontId", $data["front_id"] ?? null)];
 
     } catch (\Exception $e) {
-     \DB::rollback();//Rollback to Data Base
+      \DB::rollback();//Rollback to Data Base
       $status = $this->getStatusError($e->getCode());
       $response = ["errors" => $e->getMessage()];
     }
@@ -158,44 +157,35 @@ class MessageApiController extends BaseApiController
   {
     try {
       //Search if conversation is of the provider
-      $provider = Provider::where("name", $message->conversation->entity_type ?? "null")->first();
-
+      $provider = Provider::where("system_name", $message->conversation->entity_type ?? "null")->first();
       //Emit message
       if ($provider) {
+        //Instance de inotification service
+        $notification = app("Modules\Notification\Services\Inotification");
         //Instance the message type
         $messageType = "text";
         //Get message attachment
         if ($message->attached) {
           $file = $message->files()->where('zone', 'attachment')->first();
-          //Send url to get file
-          $messagaAttachment = \URL::route("api.ichat.external.file.get", ["fileId" => $file->filename]);
-          //Instance the message type
-          $messageType = $file->isImage() ? "image" : ($file->extension == "mp3" ? "audio" : "document");
+          if ($file) {
+            //Send url to get file //TODO : Implement tokenable to return the private files
+            $messagaAttachment = \URL::route("api.ichat.external.file.get", ["fileId" => $file->filename]);
+            //Default file type
+            $messageType = "document";
+            //Validate extension
+            if ($file->isImage()) $messageType = "image";
+            if (in_array($file->extension, json_decode(setting('media::allowedAudioTypes')))) $messageType = "audio";
+            if (in_array($file->extension, json_decode(setting('media::allowedVideoTypes')))) $messageType = "video";
+          }
         }
-
-        //Send request
-        $client = new \GuzzleHttp\Client();
-        $response = $client->request('POST',
-          $provider->end_point,
-          //'https://nflow.imaginacolombia.com/webhook-test/14bc8ef6-c757-4c62-8301-b4b6f355ce60',
-          [
-            'body' => json_encode([
-              "attributes" => [
-                "provider" => $provider->name,
-                "type" => $messageType,
-                "message" => $message->body,
-                "conversationId" => $message->conversation->entity_id,
-                "file" => $messagaAttachment ?? null
-              ]
-            ]),
-            'headers' => [
-              'Content-Type' => 'application/json',
-              'Authorization' => $provider->token,
-            ]
-          ]
-        );
-        //Log
-        \Log::info("[send-message-provider]:: Emit message to provider - Type: {$messageType} - status code: " . $response->getStatusCode());
+        //Send notification
+        $notification->provider($provider->system_name)
+          ->to($message->conversation->entity_id)
+          ->push([
+            "type" => $messageType,
+            "message" => $message->body,
+            "file" => $messagaAttachment ?? null
+          ]);
       }
     } catch (\Exception $e) {
       \Log::info("[send-message-provider]::Error " . $e->getMessage());

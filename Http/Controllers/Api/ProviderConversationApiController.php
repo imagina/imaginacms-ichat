@@ -8,7 +8,7 @@ use Mockery\CountValidator\Exception;
 use Modules\Ihelpers\Http\Controllers\Api\BaseApiController;
 use Modules\Ichat\Repositories\ConversationRepository;
 use Modules\Ichat\Repositories\MessageRepository;
-use Modules\Ichat\Entities\Provider;
+use Modules\Notification\Entities\Provider;
 use Modules\Media\Entities\File;
 use Modules\User\Repositories\UserRepository;
 use Modules\User\Entities\Sentinel\User;
@@ -52,7 +52,7 @@ class ProviderConversationApiController extends BaseApiController
       //Validate Request
       $this->validateRequestApi(new CreateProviderMessageRequest($data));
       //Validate Provider
-      $provider = Provider::where('name', $data['provider'])->first();
+      $provider = Provider::where('system_name', $data['provider'])->first();
       if (!$provider) throw new Exception('Provider not found', 500);
       //Get the user provider
       $user = $this->getUserProvider($data);
