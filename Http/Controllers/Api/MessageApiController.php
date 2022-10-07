@@ -168,8 +168,12 @@ class MessageApiController extends BaseApiController
         if ($message->attached) {
           $file = $message->files()->where('zone', 'attachment')->first();
           if ($file) {
-            //Send url to get file //TODO : Implement tokenable to return the private files
-            $messagaAttachment = \URL::route("api.ichat.external.file.get", ["fileId" => $file->filename]);
+            $fileToken = $file->generateToken(null, 2);
+            //Send url to get file
+            $messagaAttachment = \URL::route("public.media.media.show", [
+              "criteria" => $file->id,
+              "token" => $fileToken->token
+            ]);
             //Default file type
             $messageType = "document";
             //Validate extension
