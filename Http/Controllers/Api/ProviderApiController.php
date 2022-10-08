@@ -15,8 +15,10 @@ use Modules\User\Entities\Sentinel\User;
 use Modules\Ichat\Transformers\MessageTransformer;
 use Modules\Ichat\Http\Requests\CreateProviderMessageRequest;
 use Modules\Media\Services\FileService;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
 
-class ProviderConversationApiController extends BaseApiController
+class ProviderApiController extends BaseApiController
 {
   private $userEntity;
   private $userRepository;
@@ -42,13 +44,13 @@ class ProviderConversationApiController extends BaseApiController
    * @param Request $request
    * @return mixed
    */
-  public function create(Request $request)
+  public function manage(Request $request)
   {
     \DB::beginTransaction();
     try {
       $response = ["data" => []];
       $data = $request->input('attributes') ?? [];//Get data
-      \Log::info("[Provider-Message]::Create" . json_encode($data));
+      \Log::info("[Provider-Message]::Creating - " . json_encode($data));
       //Validate Request
       $this->validateRequestApi(new CreateProviderMessageRequest($data));
       //Validate Provider
@@ -56,7 +58,10 @@ class ProviderConversationApiController extends BaseApiController
       if (!$provider) throw new Exception('Provider not found', 500);
       //Get the user provider
       $user = $this->getUserProvider($data);
-      $data["users"] = [$user->id];
+      if ($user) {
+        $data["users"] = [$user->id];//Set conversation user
+        if (!\Auth::id()) \Auth::loginUsingId($user->id);//Authenticated user
+      }
       //Get the conversation
       $conversation = $this->getConversation($data);
       $response["data"]['conversation'] = $conversation;
@@ -69,7 +74,8 @@ class ProviderConversationApiController extends BaseApiController
           "user_id" => $user->id,
           "body" => $data["message"] ?? "",
           "attached" => $fileMessage ? $fileMessage->id : null,
-          "medias_single" => $fileMessage ? ["attachment" => $fileMessage->id] : []
+          "medias_single" => $fileMessage ? ["attachment" => $fileMessage->id] : [],
+          "created_at" => $data["created_at"] ?? Carbon::now()
         ]);
         $response["data"]['message'] = $message;
       }
@@ -114,7 +120,7 @@ class ProviderConversationApiController extends BaseApiController
     //Instance file service
     $fileService = app("Modules\Media\Services\FileService");
     //Get base64 file
-    $uploadedFile = getUploadedFileFromUrl($data["file"]);
+    $uploadedFile = getUploadedFileFromUrl($data["file"], ($data["fileContext"] ?? []));
     //Create file
     return $fileService->store($uploadedFile, 0, 'privatemedia');
   }
@@ -141,10 +147,95 @@ class ProviderConversationApiController extends BaseApiController
     return $conversation;
   }
 
-  /** Return chat file */
-  public function getFile($fileId)
+  /** Validate Webhook of provider */
+  public function validateWebhook($provider, Request $request)
   {
-    $file = File::where("filename", $fileId)->first();
-    return \Storage::disk("privatemedia")->response($file->path->getRelativeUrl());
+    //Validate webhook
+    switch ($provider) {
+      case "whatsapp":
+        $responseToken = $request->query("hub_challenge") ?? 0;
+        return response()->json((int)$responseToken, 200);
+        break;
+    }
+
+    //Default abort 404
+    return abort(404);
+  }
+
+  /** Handle provider Webhook */
+  public function handleWebhook($provider, Request $request)
+  {
+    try {
+      //Parse the message by provider
+      $data = $this->{"get" . Str::title($provider) . "Message"}($request->all());
+      //Manage message
+      if ($data) {
+        $response = $this->validateResponseApi($this->manage(new Request([
+          "attributes" => array_merge(["provider" => $provider], $data)
+        ])));
+      }
+      //Log info
+      \Log::info("[handleWebhook]::{$provider} Success");
+    } catch (\Exception $e) {
+      $status = $this->getStatusError($e->getCode());
+      $response = ["errors" => $e->getMessage()];
+      \Log::info("[handleWebhook]::{$provider}. Error -> " . $e->getMessage());
+    }
+    //Return response
+    return response()->json($response ?? ["data" => "Request successful"], $status ?? 200);
+  }
+
+  /** Return the Whatsapp messages data  */
+  private function getWhatsappMessage($data)
+  {
+    try {
+      //Get provider data
+      $provider = Provider::where('system_name', "whatsapp")->first();
+      //Get attributes from the message
+      $contact = $data["entry"][0]["changes"][0]["value"]["contacts"][0] ?? null;
+      $message = $data["entry"][0]["changes"][0]["value"]["messages"][0] ?? null;
+      //Validate message
+      if (!$message) return null;
+      //Get date entry message
+      $messageDate = $message["timestamp"] ?? null;
+      if ($messageDate) {
+        $dateTmp = new \DateTime();
+        $dateTmp->setTimestamp($messageDate);
+        $messageDate = $dateTmp->format("Y-m-d H:m:s");
+      }
+      //Instance the response
+      $response = [
+        "conversation_id" => $message["from"],
+        "first_name" => $contact["profile"]["name"] ?? null,
+        "message" => $message["text"]["body"] ?? null,
+        "created_at" => $messageDate
+      ];
+      //Get file
+      if (($message["type"] != "text") && $provider && $provider->status && isset($provider->fields)) {
+        //Request File url
+        $client = new \GuzzleHttp\Client();
+        $fileResponse = $client->request('GET',
+          "https://graph.facebook.com/v15.0/{$message[$message["type"]]["id"]}",
+          ['headers' => [
+            'Content-Type' => 'application/json',
+            'Authorization' => "Bearer {$provider->fields->accessToken}",
+          ]]
+        );
+        $fileResponse = json_decode($fileResponse->getBody()->getContents());
+        //Set file to response
+        $response["file"] = $fileResponse->url;
+        //Set file request context
+        $response["fileContext"] = [
+          'header' => "User-Agent: php/7 \r\n" .
+            "Authorization: Bearer {$provider->fields->accessToken}"
+        ];
+        //Replace the message text by the file caption
+        $response["message"] = $message[$message["type"]]["caption"] ?? null;
+      }
+      //Response
+      return $response;
+    } catch (\Exception $e) {
+      throw new Exception('whatsappBusiness::Issue parsing the message: ' . $e->getMessage(), 500);
+    }
   }
 }

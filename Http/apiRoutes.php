@@ -9,8 +9,8 @@ $router->group(['prefix' => '/ichat/v1'], function (Router $router) {
   // Messages
   require('ApiRoutes/messagesRoutes.php');
 
-  // External provider
-  require('ApiRoutes/externalProvidersRoutes.php');
+  // Provider
+  require('ApiRoutes/providersRoutes.php');
 
   // append
 });
