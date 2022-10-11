@@ -120,7 +120,7 @@ class ProviderApiController extends BaseApiController
     //Instance file service
     $fileService = app("Modules\Media\Services\FileService");
     //Get base64 file
-    $uploadedFile = getUploadedFileFromUrl($data["file"], ($data["fileContext"] ?? []));
+    $uploadedFile = getUploadedFileFromUrl($data["file"], ($data["file_context"] ?? []));
     //Create file
     return $fileService->store($uploadedFile, 0, 'privatemedia');
   }
@@ -163,15 +163,20 @@ class ProviderApiController extends BaseApiController
   }
 
   /** Handle provider Webhook */
-  public function handleWebhook($provider, Request $request)
+  public function handleWebhook($providerName, Request $request)
   {
     try {
+      //Get provider data
+      $provider = Provider::where('system_name', $providerName)->first();
+      //Validate the provider
+      if (!$provider || !$provider->status || !isset($provider->fields))
+        throw new Exception("Provider '{$providerName}' not found", 400);
       //Parse the message by provider
-      $data = $this->{"get" . Str::title($provider) . "Message"}($request->all());
+      $data = $this->{"get" . Str::title($providerName) . "Message"}($request->all(), $provider);
       //Manage message
       if ($data) {
         $response = $this->validateResponseApi($this->manage(new Request([
-          "attributes" => array_merge(["provider" => $provider], $data)
+          "attributes" => array_merge(["provider" => $providerName], $data)
         ])));
       }
       //Log info
@@ -186,32 +191,30 @@ class ProviderApiController extends BaseApiController
   }
 
   /** Return the Whatsapp messages data  */
-  private function getWhatsappMessage($data)
+  private function getWhatsappMessage($data, $provider)
   {
     try {
-      //Get provider data
-      $provider = Provider::where('system_name', "whatsapp")->first();
       //Get attributes from the message
       $contact = $data["entry"][0]["changes"][0]["value"]["contacts"][0] ?? null;
       $message = $data["entry"][0]["changes"][0]["value"]["messages"][0] ?? null;
       //Validate message
       if (!$message) return null;
       //Get date entry message
-      $messageDate = $message["timestamp"] ?? null;
+      /*$messageDate = $message["timestamp"] ?? null;
       if ($messageDate) {
         $dateTmp = new \DateTime();
         $dateTmp->setTimestamp($messageDate);
         $messageDate = $dateTmp->format("Y-m-d H:m:s");
-      }
+      }*/
       //Instance the response
       $response = [
         "conversation_id" => $message["from"],
         "first_name" => $contact["profile"]["name"] ?? null,
-        "message" => $message["text"]["body"] ?? null,
-        "created_at" => $messageDate
+        "message" => $message["text"]["body"] ?? $message["button"]["text"] ?? null
+        //"created_at" => $messageDate
       ];
       //Get file
-      if (($message["type"] != "text") && $provider && $provider->status && isset($provider->fields)) {
+      if (in_array($message["type"], ["video", "document", "image", "audio", "stiker"])) {
         //Request File url
         $client = new \GuzzleHttp\Client();
         $fileResponse = $client->request('GET',
@@ -225,7 +228,7 @@ class ProviderApiController extends BaseApiController
         //Set file to response
         $response["file"] = $fileResponse->url;
         //Set file request context
-        $response["fileContext"] = [
+        $response["file_context"] = [
           'header' => "User-Agent: php/7 \r\n" .
             "Authorization: Bearer {$provider->fields->accessToken}"
         ];
