@@ -10,16 +10,19 @@ use Modules\Notification\Entities\Provider;
 use Modules\Ichat\Transformers\MessageTransformer;
 use Modules\Ichat\Http\Requests\CreateMessageRequest;
 use Modules\Ichat\Http\Requests\UpdateMessageRequest;
+use Modules\Ichat\Services\MessageService;
 use Modules\Media\Entities\File;
 use Illuminate\Support\Facades\Auth;
 
 class MessageApiController extends BaseApiController
 {
   private $message;
+  private $messageService;
 
-  public function __construct(MessageRepository $message)
+  public function __construct(MessageRepository $message, MessageService $messageService)
   {
     $this->message = $message;
+    $this->messageService = $messageService;
   }
 
   /**
@@ -33,16 +36,24 @@ class MessageApiController extends BaseApiController
 
     try {
       $data = $request->input('attributes') ?? [];//Get data
-
       //Validate Request
       $this->validateRequestApi(new CreateMessageRequest($data));
-      //Create item
-      $message = $this->message->create($data);
-      //Emit message to provider
-      $this->emitMessageForProvider($message);
+      //Map the message data
+      $messageParsed = [
+        "message" => $data["message"] ?? $data["body"] ?? "",
+        "provider" => $data["provider"] ?? null,
+        "recipient_id" => $data["recipient_id"] ?? null,
+        "sender_id" => $data["user_id"] ?? null,
+        "conversation_id" => $data["conversation_id"] ?? null,
+        "conversation_private" => $data["conversation_private"] ?? 1,
+        "media_id" => $data["media_id"] ?? $data["attached"] ?? null,
+        "send_to_provider" => true
+      ];
+      //Create message
+      $result = $this->messageService->create($messageParsed);
       //Response
-      $response = ["data" => collect(new MessageTransformer($message))->put("frontId", $data["front_id"] ?? null)];
-
+      $response = ["data" => collect(new MessageTransformer($result["data"]["message"]))
+        ->put("frontId", $data["front_id"] ?? null)];
     } catch (\Exception $e) {
       \DB::rollback();//Rollback to Data Base
       $status = $this->getStatusError($e->getCode());
@@ -150,49 +161,5 @@ class MessageApiController extends BaseApiController
       $response = ["errors" => $e->getMessage()];
     }
     return response()->json($response, $status ?? 200);
-  }
-
-  /** Emit message for providers*/
-  public function emitMessageForProvider($message)
-  {
-    try {
-      //Search if conversation is of the provider
-      $provider = Provider::where("system_name", $message->conversation->entity_type ?? "null")->first();
-      //Emit message
-      if ($provider) {
-        //Instance de inotification service
-        $notification = app("Modules\Notification\Services\Inotification");
-        //Instance the message type
-        $messageType = "text";
-        //Get message attachment
-        if ($message->attached) {
-          $file = $message->files()->where('zone', 'attachment')->first();
-          if ($file) {
-            $fileToken = $file->generateToken(null, 2);
-            //Send url to get file
-            $messagaAttachment = \URL::route("public.media.media.show", [
-              "criteria" => $file->id,
-              "token" => $fileToken->token
-            ]);
-            //Default file type
-            $messageType = "document";
-            //Validate extension
-            if ($file->isImage()) $messageType = "image";
-            if (in_array($file->extension, json_decode(setting('media::allowedAudioTypes')))) $messageType = "audio";
-            if (in_array($file->extension, json_decode(setting('media::allowedVideoTypes')))) $messageType = "video";
-          }
-        }
-        //Send notification
-        $notification->provider($provider->system_name)
-          ->to($message->conversation->entity_id)
-          ->push([
-            "type" => $messageType,
-            "message" => $message->body,
-            "file" => $messagaAttachment ?? null
-          ]);
-      }
-    } catch (\Exception $e) {
-      \Log::info("[send-message-provider]::Error " . $e->getMessage());
-    }
   }
 }
