@@ -17,9 +17,13 @@ class Message extends Model
     'conversation_id',
     'user_id',
     'reply_to_id',
-    'created_at'
+    'created_at',
+    'options'
   ];
 
+  protected $casts = [
+    'options' => 'array'
+  ];
 
   public function conversation()
   {
