@@ -40,14 +40,15 @@ class MessageApiController extends BaseApiController
       $this->validateRequestApi(new CreateMessageRequest($data));
       //Map the message data
       $messageParsed = [
-        "message" => $data["message"] ?? $data["body"] ?? "",
+        "message" => $data["message"] ?? $data["body"] ?? null,
         "provider" => $data["provider"] ?? null,
         "recipient_id" => $data["recipient_id"] ?? null,
         "sender_id" => $data["user_id"] ?? null,
         "conversation_id" => $data["conversation_id"] ?? null,
         "conversation_private" => $data["conversation_private"] ?? 1,
         "media_id" => $data["media_id"] ?? $data["attached"] ?? null,
-        "send_to_provider" => true
+        "send_to_provider" => true,
+        "template" => $data["template"] ?? null
       ];
       //Create message
       $result = $this->messageService->create($messageParsed);

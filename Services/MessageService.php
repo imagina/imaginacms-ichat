@@ -53,7 +53,7 @@ class MessageService
       $response = ["data" => []];
 
       /** Get the parameters used from the data */
-      $messageText = ($data["message"] ?? $data["body"] ?? null); // Message text
+      $messageText = ($data["message"] ?? $data["body"] ?? $data["template"]["name"] ?? null); // Message text
       $sendToProvider = ($data["send_to_provider"] ?? false); // Define if the message should be send to the provider
 
       /** Validate when it's possible create the message*/
@@ -92,6 +92,7 @@ class MessageService
         "body" => $messageText ?? "",
         "attached" => $fileMessage ? $fileMessage->id : null,
         "medias_single" => $fileMessage ? ["attachment" => $fileMessage->id] : [],
+        "options" => ["template" => $data["template"] ?? null],
         "created_at" => $data["created_at"] ?? Carbon::now()
       ]);
 
@@ -276,13 +277,21 @@ class MessageService
           if (in_array($file->extension, json_decode(setting('media::allowedVideoTypes')))) $messageType = "video";
         }
       }
+      //Handle template options
+      if (($message->options["template"] ?? null)) {
+        //Change the message type
+        $messageType = "template";
+        //Instance the message template
+        $messageTemplate = $message->options["template"];
+      }
       //Send notification
       $notification->provider($provider->system_name)
         ->to($message->conversation->entity_id)
         ->push([
           "type" => $messageType,
           "message" => $message->body,
-          "file" => $messagaAttachment ?? null
+          "file" => $messagaAttachment ?? null,
+          "template" => $messageTemplate ?? null
         ]);
     }
   }
