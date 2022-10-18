@@ -188,7 +188,7 @@ class MessageService
     $conversationId = ($data["conversation_id"] ?? null); // the conversationId for the message
     $provider = ($data["provider"] ?? null);// Provider name for the conversation
     $recipientId = ($data["recipient_id"] ?? null);// for provider, it's the contact id if it
-    $conversationPrivate = (int)$data["conversation_private"];// Define the conversation type private/public
+    $conversationPrivate = (int)($data["conversation_private"] ?? 1);// Define the conversation type private/public
     $conversationUsers = $data["users"];// users for the conversation
 
     /** Validate the parameters */
@@ -207,7 +207,7 @@ class MessageService
         ->where("entity_id", $recipientId)->first();
       //Create the conversation for provider
       if (!$conversation) $conversation = $this->conversation->create([
-        "private" => $conversationPrivate ?? $conversationPrivate,
+        "private" => $conversationPrivate,
         "entity_type" => $provider,
         "entity_id" => $recipientId,
         "users" => $conversationUsers
