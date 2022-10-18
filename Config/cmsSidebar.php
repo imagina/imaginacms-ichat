@@ -1,6 +1,8 @@
 <?php
 
 return [
-  "admin" => [],
+  "admin" => [
+    "ichat_cms_admin_conversations"
+  ],
   "panel" => [],
 ];
