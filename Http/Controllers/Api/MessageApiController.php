@@ -43,7 +43,7 @@ class MessageApiController extends BaseApiController
         "message" => $data["message"] ?? $data["body"] ?? null,
         "provider" => $data["provider"] ?? null,
         "recipient_id" => $data["recipient_id"] ?? null,
-        "sender_id" => $data["user_id"] ?? null,
+        "sender_id" => $data["user_id"] ?? $data["sender_id"] ?? null,
         "conversation_id" => $data["conversation_id"] ?? null,
         "conversation_private" => $data["conversation_private"] ?? 1,
         "media_id" => $data["media_id"] ?? $data["attached"] ?? null,
