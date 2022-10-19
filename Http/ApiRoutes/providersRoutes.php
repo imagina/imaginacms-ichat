@@ -5,7 +5,7 @@ use Illuminate\Routing\Router;
 $router->group(['prefix' => '/provider/conversations'], function (Router $router) {
   $router->post('/', [
     'as' => 'api.ichat.provider.manage',
-    'uses' => 'ProviderApiController@manage',
+    'uses' => 'ProviderApiController@create',
     'middleware' => ['auth:api']
   ]);
 });

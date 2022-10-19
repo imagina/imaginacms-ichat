@@ -9,11 +9,45 @@ use Modules\Ihelpers\Http\Controllers\Api\BaseApiController;
 use Modules\Notification\Entities\Provider;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Modules\Ichat\Services\MessageService;
 
 class ProviderApiController extends BaseApiController
 {
-  public function __construct()
+  private $messageService;
+
+  public function __construct(MessageService $messageService)
   {
+    $this->messageService = $messageService;
+  }
+
+  /** Create conversation of provider */
+  public function create(Request $request)
+  {
+    \DB::beginTransaction();
+    try {
+      $data = $request->input("attributes");
+      //Map data for create the conversation
+      $data = [
+        "provider" => $data["provider"],
+        "recipient_id" => $data["conversation_id"],
+        "first_name" => $data["first_name"],
+        "last_name" => $data["last_name"],
+        "conversation_private" => 0
+      ];
+      //Create Users
+      $conversationUsers = $this->messageService->getConversationUsers($data);
+      $data["users"] = $conversationUsers["users"];
+      $conversation = $this->messageService->getConversation($data);
+      //Set response
+      $response = ["data" => $conversation];
+      \DB::commit(); //Commit to Data Base
+    } catch (\Exception $e) {
+      \DB::rollback();//Rollback to Data Base
+      $status = $this->getStatusError($e->getCode());
+      $response = ["errors" => $e->getMessage()];
+    }
+    //Return response
+    return response()->json($response ?? ["data" => "Request successful"], $status ?? 200);
   }
 
   /** Validate Webhook of provider */

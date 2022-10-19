@@ -117,7 +117,7 @@ class MessageService
    * @param $data
    * @return array
    */
-  private function getConversationUsers($data)
+  public function getConversationUsers($data)
   {
     // Instance the parameters used form the data
     $recipientId = ($data["recipient_id"] ?? null);//userId who send the message or the id of the contact for a provider
@@ -182,7 +182,7 @@ class MessageService
    * @param $data
    * @return null
    */
-  private function getConversation($data)
+  public function getConversation($data)
   {
     // Instance the parameters used form the data
     $conversationId = ($data["conversation_id"] ?? null); // the conversationId for the message
