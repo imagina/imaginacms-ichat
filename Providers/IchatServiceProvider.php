@@ -98,6 +98,7 @@ class IchatServiceProvider extends ServiceProvider
         return new \Modules\Ichat\Repositories\Cache\CacheUserDecorator($repository);
       }
     );
-    // add bindings
+// add bindings
+
   }
 }

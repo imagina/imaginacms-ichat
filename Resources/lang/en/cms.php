@@ -2,7 +2,8 @@
 
 return [
   "sidebar" => [
-    "adminMessages" => "Chat"
+    "adminMessages" => "Chat",
+    "conversations" => "Chat"
   ],
   "message" => [
     "noMessages" => "There isn't messages..."

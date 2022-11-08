@@ -9,16 +9,21 @@ class Message extends Model
 {
   protected $table = 'ichat__messages';
   use MediaRelation;
-  
+
   protected $fillable = [
     'type',
     'body',
     'attached',
     'conversation_id',
     'user_id',
-    'reply_to_id'
+    'reply_to_id',
+    'created_at',
+    'options'
   ];
-  
+
+  protected $casts = [
+    'options' => 'array'
+  ];
 
   public function conversation()
   {
@@ -35,15 +40,15 @@ class Message extends Model
   {
     return $this->hasOne(Message::class, 'id', 'reply_to_id');
   }
-  
-  
-  
+
+
+
   /**
    * @return mixed
    */
   public function getAttachmentAttribute()
   {
-    
+
     if(!empty($this->attached)){
       $thumbnail = $this->files()->where('zone', 'attachment')->first();
       return [
@@ -56,6 +61,6 @@ class Message extends Model
     }
     else
       return null;
-    
+
   }
 }

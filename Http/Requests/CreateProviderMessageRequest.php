@@ -8,11 +8,7 @@ class CreateProviderMessageRequest extends BaseFormRequest
 {
   public function rules()
   {
-    return [
-      'provider' => 'required',
-      'conversationId' => 'required',
-      'message' => 'required',
-    ];
+    return [];
   }
 
   public function translationRules()

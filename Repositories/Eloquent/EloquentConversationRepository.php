@@ -3,6 +3,8 @@
 namespace Modules\Ichat\Repositories\Eloquent;
 
 use Modules\Ichat\Repositories\ConversationRepository;
+use Modules\Ichat\Entities\ConversationUser;
+use Modules\Ichat\Entities\Conversation;
 use Modules\Core\Repositories\Eloquent\EloquentBaseRepository;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Arr;
@@ -83,14 +85,15 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
     }
 
     //Get all public conversations and own chats
-    if (isset($params->permissions["ichat.conversations.index-all"])) {
-      if ($params->permissions["ichat.conversations.index-all"]) {
-        $query->where(function ($q) {
-          $q->where("private", "0")->orWherehas('users', function ($query) {
-            $query->where('user_id', Auth::id());
-          });
+    if (isset($params->permissions["ichat.conversations.index-all"]) && $params->permissions["ichat.conversations.index-all"]) {
+      //Add the auth user to all public conversations
+      $this->addAuthUserToPublicConversations();
+      //Add the filter
+      $query->where(function ($q) {
+        $q->where("private", "0")->orWherehas('users', function ($query) {
+          $query->where('user_id', Auth::id());
         });
-      }
+      });
     } else {//Get only the own chats
       $query->wherehas('users', function ($query) {
         $query->where('user_id', Auth::id());
@@ -178,4 +181,18 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
     $model ? $model->delete() : false;
   }
 
+  private function addAuthUserToPublicConversations()
+  {
+    //Get all public conversations where the current user not exist
+    $publicConversations = Conversation::where('private', '0')
+      ->whereNotIn('id', function ($q) {
+        $q->select('conversation_id')->from('ichat__conversation_user')->where('user_id', Auth::id());
+      })->get();
+    //Create relation
+    if ($publicConversations->count()) {
+      ConversationUser::insert($publicConversations->map(function ($conversation) {
+        return ["user_id" => Auth::id(), "conversation_id" => $conversation->id];
+      })->toArray());
+    };
+  }
 }

@@ -6,19 +6,23 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Modules\Ihelpers\Http\Controllers\Api\BaseApiController;
 use Modules\Ichat\Repositories\MessageRepository;
+use Modules\Notification\Entities\Provider;
 use Modules\Ichat\Transformers\MessageTransformer;
 use Modules\Ichat\Http\Requests\CreateMessageRequest;
 use Modules\Ichat\Http\Requests\UpdateMessageRequest;
+use Modules\Ichat\Services\MessageService;
+use Modules\Media\Entities\File;
 use Illuminate\Support\Facades\Auth;
-
 
 class MessageApiController extends BaseApiController
 {
   private $message;
+  private $messageService;
 
-  public function __construct(MessageRepository $message)
+  public function __construct(MessageRepository $message, MessageService $messageService)
   {
     $this->message = $message;
+    $this->messageService = $messageService;
   }
 
   /**
@@ -29,19 +33,31 @@ class MessageApiController extends BaseApiController
    */
   public function create(Request $request)
   {
-    
+
     try {
       $data = $request->input('attributes') ?? [];//Get data
-      
       //Validate Request
       $this->validateRequestApi(new CreateMessageRequest($data));
-      //Create item
-      $message = $this->message->create($data);
+      //Map the message data
+      $messageParsed = [
+        "message" => $data["message"] ?? $data["body"] ?? null,
+        "provider" => $data["provider"] ?? null,
+        "recipient_id" => $data["recipient_id"] ?? null,
+        "sender_id" => $data["user_id"] ?? $data["sender_id"] ?? null,
+        "first_name" => $data["first_name"] ?? null,
+        "conversation_id" => $data["conversation_id"] ?? null,
+        "conversation_private" => $data["conversation_private"] ?? 1,
+        "media_id" => $data["media_id"] ?? $data["attached"] ?? null,
+        "send_to_provider" => true,
+        "template" => $data["template"] ?? null
+      ];
+      //Create message
+      $result = $this->messageService->create($messageParsed);
       //Response
-      $response = ["data" => collect(new MessageTransformer($message))->put("frontId", $data["front_id"] ?? null)];
-   
+      $response = ["data" => collect(new MessageTransformer($result["data"]["message"]))
+        ->put("frontId", $data["front_id"] ?? null)];
     } catch (\Exception $e) {
-     \DB::rollback();//Rollback to Data Base
+      \DB::rollback();//Rollback to Data Base
       $status = $this->getStatusError($e->getCode());
       $response = ["errors" => $e->getMessage()];
     }
