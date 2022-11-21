@@ -16,6 +16,7 @@ class IchatDatabaseSeeder extends Seeder
     {
         Model::unguard();
 
+        $this->call(IchatModuleTableSeeder::class);
         // $this->call("OthersTableSeeder");
     }
 }
