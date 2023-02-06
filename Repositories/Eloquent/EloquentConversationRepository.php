@@ -11,34 +11,34 @@ use Illuminate\Support\Arr;
 
 class EloquentConversationRepository extends EloquentBaseRepository implements ConversationRepository
 {
-    public function create($data)
-    {
-        $conversation = null;
-        //if data has entity_type and entity_id, then creates the conversation
-        if(!empty($data['entity_type']) && !empty($data['entity_id'])){
-            $conversation = $this->model->create($data);
-        }else{
-            //Validate if conversation already exist
-            $conversation = $this->model->whereHas('users', function ($q) use ($data) {
-                $q->select('conversation_id')->whereIn('user_id', $data['users'])->groupBy('conversation_id')
-                    ->having(\DB::raw('count(*)'), '=', count($data['users']));
-            })->with('users')->first();
+  public function create($data)
+  {
+    $conversation = null;
+    //if data has entity_type and entity_id, then creates the conversation
+    if (!empty($data['entity_type']) && !empty($data['entity_id'])) {
+      $conversation = $this->model->create($data);
+    } else {
+      //Validate if conversation already exist
+      $conversation = $this->model->whereHas('users', function ($q) use ($data) {
+        $q->select('conversation_id')->whereIn('user_id', $data['users'])->groupBy('conversation_id')
+          ->having(\DB::raw('count(*)'), '=', count($data['users']));
+      })->with('users')->first();
 
-            //Create conversation
-            if (!$conversation) {
-                $conversation = $this->model->create($data);
-            }
-        }
-
-        //Sync Users relation
-        if ($conversation) {
-            $conversation->users()->sync(Arr::get($data, 'users', []));//Sync users
-            $conversation = $this->getItem($conversation->id, (object)["include" => ["users"]]); //Get model with user relation
-        }
-
-        //Response
-        return $conversation;
+      //Create conversation
+      if (!$conversation) {
+        $conversation = $this->model->create($data);
+      }
     }
+
+    //Sync Users relation
+    if ($conversation) {
+      $conversation->users()->sync(Arr::get($data, 'users', []));//Sync users
+      $conversation = $this->getItem($conversation->id, (object)["include" => ["users"]]); //Get model with user relation
+    }
+
+    //Response
+    return $conversation;
+  }
 
   public function getItemsBy($params)
   {
@@ -100,6 +100,15 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
       });
     }
 
+    //Search
+    if (isset($filter->search) && $filter->search) {
+      $query->wherehas('users', function ($qSearch) use ($filter) {
+        $qSearch->where('users.email', "like", "%$filter->search%")
+          ->orWhere('users.first_name', "like", "%$filter->search%")
+          ->orWhere('users.last_name', "like", "%$filter->search%");
+      });
+    }
+
     /*== FIELDS ==*/
     if (isset($params->fields) && count($params->fields))
       $query->select($params->fields);
@@ -136,18 +145,18 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
         $field = $filter->field;
     }
 
-    if(isset($params->permissions["ichat.conversations.index-all"]) && !$params->permissions["ichat.conversations.index-all"])
-    //Limit only to current user
-    $query->wherehas('users', function ($query) {
-      $query->where('user_id', Auth::id());
-    });
+    if (isset($params->permissions["ichat.conversations.index-all"]) && !$params->permissions["ichat.conversations.index-all"])
+      //Limit only to current user
+      $query->wherehas('users', function ($query) {
+        $query->where('user_id', Auth::id());
+      });
 
     /*== FIELDS ==*/
     if (isset($params->fields) && count($params->fields))
       $query->select($params->fields);
 
     /*== REQUEST ==*/
-     return $query->where($field ?? 'id', $criteria)->first();
+    return $query->where($field ?? 'id', $criteria)->first();
   }
 
   public function updateBy($criteria, $data, $params = false)
