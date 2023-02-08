@@ -75,6 +75,8 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
         $orderByField = $filter->order->field ?? 'created_at';//Default field
         $orderWay = $filter->order->way ?? 'desc';//Default way
         $query->orderBy($orderByField, $orderWay);//Add order to query
+      }else{
+        $query->orderBy('created_at', 'desc');
       }
 
       //by ids
