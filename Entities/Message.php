@@ -4,11 +4,12 @@ namespace Modules\Ichat\Entities;
 
 use Illuminate\Database\Eloquent\Model;
 use Modules\Media\Support\Traits\MediaRelation;
+use Modules\Core\Support\Traits\AuditTrait;
 
 class Message extends Model
 {
   protected $table = 'ichat__messages';
-  use MediaRelation;
+  use MediaRelation, AuditTrait;
 
   protected $fillable = [
     'type',

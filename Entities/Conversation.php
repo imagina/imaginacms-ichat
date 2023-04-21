@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Laracasts\Presenter\PresentableTrait;
 use Modules\Ichat\Presenters\ConversationPresenter;
+use Modules\Core\Support\Traits\AuditTrait;
 
 class Conversation extends Model
 {
-  use PresentableTrait;
+  use PresentableTrait, AuditTrait;
 
   //protected $presenter = ConversationPresenter::class;
 
