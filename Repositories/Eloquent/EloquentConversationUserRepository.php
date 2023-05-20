@@ -73,6 +73,7 @@ class EloquentConversationUserRepository extends EloquentBaseRepository implemen
       return $query->get();
     }
   }
+
   public function getItem($criteria, $params = false)
   {
     //Initialize query
@@ -91,7 +92,7 @@ class EloquentConversationUserRepository extends EloquentBaseRepository implemen
       $filter = $params->filter;
       // find translatable attributes
       $translatedAttributes = $this->model->translatedAttributes;
-      if(isset($filter->field))
+      if (isset($filter->field))
         $field = $filter->field;
       // filter by translatable attributes
       if (isset($field) && in_array($field, $translatedAttributes))//Filter by slug
@@ -104,14 +105,21 @@ class EloquentConversationUserRepository extends EloquentBaseRepository implemen
         $query->where($field ?? 'id', $criteria);
     }
     /*== REQUEST ==*/
+
+    if (!isset($params->filter->field)) {
+      $query->where('id', $criteria);
+    }
+
     return $query->first();
   }
+
   public function create($data)
   {
     $data['sender_id'] = Auth::user()->id;
     $message = $this->model->create($data);
     return $message;
   }
+
   public function updateBy($criteria, $data, $params = false)
   {
     /*== initialize query ==*/
@@ -127,6 +135,7 @@ class EloquentConversationUserRepository extends EloquentBaseRepository implemen
     $model = $query->where($field ?? 'id', $criteria)->first();
     return $model ? $model->update((array)$data) : false;
   }
+
   public function deleteBy($criteria, $params = false)
   {
     /*== initialize query ==*/
