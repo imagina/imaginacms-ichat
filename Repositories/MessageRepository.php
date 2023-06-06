@@ -18,7 +18,7 @@ interface MessageRepository extends BaseRepository
    * @param Object $params
    * @return Collection
    */
-  public function getItem($criteria, $params);
+  public function getItem($criteria, $params = false);
 
   /**
    * Return the latest x blog posts
@@ -32,12 +32,12 @@ interface MessageRepository extends BaseRepository
    * @param Object $params
    * @return Collection
    */
-  public function updateBy($criteria, $data, $params);
+  public function updateBy($criteria, $data, $params = false);
 
   /**
    * Return the latest x blog posts
    * @param Object $params
    * @return Collection
    */
-  public function deleteBy($criteria, $params);
+  public function deleteBy($criteria, $params = false);
 }
