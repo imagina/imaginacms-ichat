@@ -92,7 +92,7 @@ class MessageService
         "body" => $messageText ?? "",
         "attached" => $fileMessage ? $fileMessage->id : null,
         "medias_single" => $fileMessage ? ["attachment" => $fileMessage->id] : [],
-        "options" => ["template" => $data["template"] ?? null],
+        "options" => ["template" => $data["template"] ?? null, "type" => $data["type"] ?? null],
         "created_at" => $data["created_at"] ?? Carbon::now()
       ]);
 
@@ -284,6 +284,10 @@ class MessageService
         //Instance the message template
         $messageTemplate = $message->options["template"];
       }
+      
+      //type from $data
+      isset($message->options["type"]) ? $messageType = $message->options["type"] : "";
+      
       //Send notification
       $notification->provider($provider->system_name)
         ->to($message->conversation->entity_id)
