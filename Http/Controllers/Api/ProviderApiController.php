@@ -102,31 +102,13 @@ class ProviderApiController extends BaseApiController
   private function getWhatsappMessage($data, $provider)
   {
     try {
-      //Get attributes from the message
-      $contact = $data["entry"][0]["changes"][0]["value"]["contacts"][0] ?? null;
-      $message = $data["entry"][0]["changes"][0]["value"]["messages"][0] ?? null;
-      //Validate message
-      if (!$message) return null;
-      //Get date entry message
-      /*$messageDate = $message["timestamp"] ?? null;
-      if ($messageDate) {
-        $dateTmp = new \DateTime();
-        $dateTmp->setTimestamp($messageDate);
-        $messageDate = $dateTmp->format("Y-m-d H:m:s");
-      }*/
-      //Instance the response
-      $response = [
-        "recipient_id" => $message["from"],
-        "first_name" => $contact["profile"]["name"] ?? null,
-        "message" => $message["text"]["body"] ?? $message["button"]["text"] ?? null
-        //"created_at" => $messageDate
-      ];
+      $response = $data;
       //Get file
-      if (in_array($message["type"], ["video", "document", "image", "audio", "sticker"])) {
+      if (isset($data["file"]) && $data["file"]["id"]) {
         //Request File url
         $client = new \GuzzleHttp\Client();
         $fileResponse = $client->request('GET',
-          "https://graph.facebook.com/v15.0/{$message[$message["type"]]["id"]}",
+          "https://graph.facebook.com/v15.0/{$data["file"]["id"]}",
           ['headers' => [
             'Content-Type' => 'application/json',
             'Authorization' => "Bearer {$provider->fields->accessToken}",
@@ -140,8 +122,9 @@ class ProviderApiController extends BaseApiController
           'header' => "User-Agent: php/7 \r\n" .
             "Authorization: Bearer {$provider->fields->accessToken}"
         ];
-        //Replace the message text by the file caption
-        $response["message"] = $message[$message["type"]]["caption"] ?? null;
+        $response["file_params"] = [
+          'file_name' => $data["file"]["name"]
+        ];
       }
       //Response
       return $response;

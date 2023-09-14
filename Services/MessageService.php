@@ -56,10 +56,6 @@ class MessageService
       $messageText = ($data["message"] ?? $data["body"] ?? $data["template"]["name"] ?? null); // Message text
       $sendToProvider = ($data["send_to_provider"] ?? false); // Define if the message should be send to the provider
 
-      /** Validate when it's possible create the message*/
-      //Valida for message information
-      if (!$messageText && !isset($data["file"]) && !isset($data["media_id"]))
-        throw new Exception("There is not body, message or file to save as message", 400);
       // Validate if the provider it's valid
       if (($data["provider"] ?? null)) {
         $provider = Provider::where('system_name', $data["provider"])->first();
@@ -84,17 +80,35 @@ class MessageService
 
       //Validate if exist a file
       $fileMessage = $this->getMessageFile($data);
+      //Search message by externalId
+      $message = false;
+      if (isset($data["external_id"]) && $data["external_id"]) {
+        $message = $this->messageRepository->getItem($data["external_id"], json_decode(json_encode([
+          "filter" => ["field" => "external_id"],
+          "include" => []
+        ])));
+      }
 
-      /** create the message */
-      $response["data"]['message'] = $this->messageRepository->create([
-        "conversation_id" => $conversation->id,
-        "user_id" => $conversationUsers["sender"]->id,
-        "body" => $messageText ?? "",
-        "attached" => $fileMessage ? $fileMessage->id : null,
-        "medias_single" => $fileMessage ? ["attachment" => $fileMessage->id] : [],
-        "options" => ["template" => $data["template"] ?? null, "type" => $data["type"] ?? null],
-        "created_at" => $data["created_at"] ?? Carbon::now()
-      ]);
+      if ($message) {
+        /** update the message */
+        $response["data"]['message'] = $this->messageRepository->updateBy($message->id, [
+          "status" => $data["status"] ?? $message->status,
+          "updated_at" => Carbon::now()
+        ]);
+      } else if ($messageText || $fileMessage) {
+        /** create the message */
+        $response["data"]['message'] = $this->messageRepository->create([
+          "conversation_id" => $conversation->id,
+          "user_id" => $conversationUsers["sender"]->id,
+          "body" => $messageText ?? "",
+          "attached" => $fileMessage ? $fileMessage->id : null,
+          "medias_single" => $fileMessage ? ["attachment" => $fileMessage->id] : [],
+          "options" => ["template" => $data["template"] ?? null, "type" => $data["type"] ?? null],
+          "external_id" => $data["external_id"] ?? null,
+          "status" => $data["status"] ?? 1,
+          "created_at" => $data["created_at"] ?? Carbon::now()
+        ]);
+      }
 
       /** emit the messaga to the provider */
       if ($sendToProvider) $this->emitMessageProvider(
@@ -233,6 +247,7 @@ class MessageService
     $file = ($data["file"] ?? null); // Message file
     $mediaId = ($data["media_id"] ?? null); // Message file form media by id
     $fileContext = ($data["file_context"] ?? []); // Message file context
+    $fileParams = ($data["file_params"] ?? []); // Message file params (e.g filename)
     //Instance the response
     $response = null;
     if ($mediaId) $response = File::find($mediaId);
@@ -240,7 +255,7 @@ class MessageService
       //Instance file service
       $fileService = app("Modules\Media\Services\FileService");
       //Get base64 file
-      $uploadedFile = getUploadedFileFromUrl($file, $fileContext);
+      $uploadedFile = getUploadedFileFromUrl($file, $fileContext, $fileParams);
       //Create file
       $response = $fileService->store($uploadedFile, 0, 'privatemedia');
     }
@@ -284,14 +299,15 @@ class MessageService
         //Instance the message template
         $messageTemplate = $message->options["template"];
       }
-      
+
       //type from $data
       isset($message->options["type"]) ? $messageType = $message->options["type"] : "";
-      
+
       //Send notification
       $notification->provider($provider->system_name)
         ->to($message->conversation->entity_id)
         ->push([
+          "message_id" => $message->id,
           "type" => $messageType,
           "message" => $message->body,
           "file" => $messagaAttachment ?? null,

@@ -23,5 +23,12 @@ return [
     ],
   'notification' => [
     'newMessage' => 'Nuevo Mensaje'
-  ]
+  ],
+    'status' => [
+        'sent' => 'Enviado',
+        'delivered' => 'Entregado',
+        'read' => 'Leído',
+        'failed' => 'Fallido',
+        'obtained' => 'Obtenido'
+    ]
 ];
