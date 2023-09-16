@@ -23,6 +23,8 @@ class Conversation extends Model
     'entity_id',
   ];
 
+  protected $with = ['users.roles'];
+
   public function entity()
   {
     return $this->belongsTo($this->entity_type,'entity_id');
@@ -49,5 +51,4 @@ class Conversation extends Model
   {
     return $this->hasMany('Modules\Ichat\Entities\ConversationUser');
   }
-
 }

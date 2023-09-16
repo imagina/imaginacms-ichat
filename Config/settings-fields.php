@@ -3,7 +3,7 @@
 return [
   'externalRoles' => [
     'name' => 'ichat::externalRoles',
-    'value' => null,
+    'value' => [],
     'type' => 'treeSelect',
     'columns' => 'col-12 col-md-6',
     'loadOptions' => [
