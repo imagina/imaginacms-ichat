@@ -12,6 +12,7 @@ use Illuminate\Support\Arr;
 class IchatServiceProvider extends ServiceProvider
 {
   use CanPublishConfiguration;
+
   /**
    * Indicates if loading of the provider is deferred.
    *
@@ -26,24 +27,26 @@ class IchatServiceProvider extends ServiceProvider
    */
   public function register()
   {
-      $this->registerBindings();
-      //$this->app['events']->listen(BuildingSidebar::class, RegisterIchatSidebar::class);
+    $this->registerBindings();
+    //$this->app['events']->listen(BuildingSidebar::class, RegisterIchatSidebar::class);
 
-      /*$this->app['events']->listen(LoadingBackendTranslations::class, function (LoadingBackendTranslations $event) {
-          $event->load('messages', Arr::dot(trans('ichat::messages')));
-          // append translations
+    /*$this->app['events']->listen(LoadingBackendTranslations::class, function (LoadingBackendTranslations $event) {
+        $event->load('messages', Arr::dot(trans('ichat::messages')));
+        // append translations
 
-      });*/
+    });*/
   }
 
   public function boot()
   {
-      $this->publishConfig('ichat', 'permissions');
-      $this->publishConfig('ichat', 'config');
+    $this->publishConfig('ichat', 'permissions');
+    $this->publishConfig('ichat', 'config');
     $this->mergeConfigFrom($this->getModuleConfigFilePath('ichat', 'cmsPages'), "asgard.ichat.cmsPages");
     $this->mergeConfigFrom($this->getModuleConfigFilePath('ichat', 'cmsSidebar'), "asgard.ichat.cmsSidebar");
+    $this->mergeConfigFrom($this->getModuleConfigFilePath('ichat', 'settings'), "asgard.ichat.settings");
+    $this->mergeConfigFrom($this->getModuleConfigFilePath('ichat', 'settings-fields'), "asgard.ichat.settings-fields");
 
-      //$this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
+    //$this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
   }
 
   /**
@@ -53,7 +56,7 @@ class IchatServiceProvider extends ServiceProvider
    */
   public function provides()
   {
-      return array();
+    return array();
   }
 
   private function registerBindings()
@@ -62,7 +65,7 @@ class IchatServiceProvider extends ServiceProvider
       'Modules\Ichat\Repositories\MessageRepository',
       function () {
         $repository = new \Modules\Ichat\Repositories\Eloquent\EloquentMessageRepository(new \Modules\Ichat\Entities\Message());
-        if (! config('app.cache')) {
+        if (!config('app.cache')) {
           return $repository;
         }
         return new \Modules\Ichat\Repositories\Cache\CacheMessageDecorator($repository);
@@ -72,7 +75,7 @@ class IchatServiceProvider extends ServiceProvider
       'Modules\Ichat\Repositories\ConversationRepository',
       function () {
         $repository = new \Modules\Ichat\Repositories\Eloquent\EloquentConversationRepository(new \Modules\Ichat\Entities\Conversation());
-        if (! config('app.cache')) {
+        if (!config('app.cache')) {
           return $repository;
         }
         return new \Modules\Ichat\Repositories\Cache\CacheConversationDecorator($repository);
@@ -82,7 +85,7 @@ class IchatServiceProvider extends ServiceProvider
       'Modules\Ichat\Repositories\ConversationUserRepository',
       function () {
         $repository = new \Modules\Ichat\Repositories\Eloquent\EloquentConversationUserRepository(new \Modules\Ichat\Entities\ConversationUser());
-        if (! config('app.cache')) {
+        if (!config('app.cache')) {
           return $repository;
         }
         return new \Modules\Ichat\Repositories\Cache\CacheConversationUserDecorator($repository);
@@ -92,7 +95,7 @@ class IchatServiceProvider extends ServiceProvider
       'Modules\Ichat\Repositories\UserRepository',
       function () {
         $repository = new \Modules\Ichat\Repositories\Eloquent\EloquentUserRepository(new \Modules\User\Entities\Sentinel\User());
-        if (! config('app.cache')) {
+        if (!config('app.cache')) {
           return $repository;
         }
         return new \Modules\Ichat\Repositories\Cache\CacheUserDecorator($repository);
