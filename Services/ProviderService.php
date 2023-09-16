@@ -2,6 +2,7 @@
 
 namespace Modules\Ichat\Services;
 
+use Modules\Media\Entities\File;
 use Modules\Notification\Entities\Provider;
 
 class ProviderService
@@ -39,7 +40,7 @@ class ProviderService
 
             $response = ["body" => ''];
             //Loop components of template
-            foreach ($findTemplate->components as $component) {
+            foreach ($findTemplate->components as $key => $component) {
                 // Modify format of component body
 
                 // If exist files in header component
@@ -47,8 +48,13 @@ class ProviderService
                     $type = strtolower($component->type);
                     $param = collect($template["components"])->where('type', $type)->first()["parameters"][0];
 
+                    // Save media id
+                    $response["media_id"] = $param[$param["type"]]["media_id"];
+                    $response["template"] = $template;
                     // Save the link to the file
-                    $response["file"] = $param[$param["type"]]["link"];
+                    $response["template"]["components"][$key]["parameters"][0][$param["type"]]["link"] = $this->getFileUrl($response["media_id"]);
+                    // Delete media id in template
+                    unset($response["template"]["components"][$key]["parameters"][0][$param["type"]]["media_id"]);
                 } else {
                     // Validate if it is one of the following types
                     if (in_array($component->type, ["HEADER", "BODY", "FOOTER"])) {
@@ -125,7 +131,15 @@ class ProviderService
 
                         // If the type is 'text', add bold formatting to the response body
                         if ($type === 'text') $response["body"] .= "**$text**\n";
-                        else $response["file"] = $propValue[$type]["link"];
+                        else {
+                            // Save media id
+                            $response["media_id"] = $propValue[$type]["media_id"];
+                            $response["interactive"] = $interactive;
+                            // Save the link to the file
+                            $response["interactive"][$propKey][$type]["link"] = $this->getFileUrl($response["media_id"]);
+                            // Delete media id in template
+                            unset($response["interactive"][$propKey][$type]["media_id"]);
+                        }
                     } else {
                         // For other keys, simply add the text to the response body
                         $text = $propValue["text"];
@@ -163,5 +177,17 @@ class ProviderService
         } catch (\Exception $e) {
             \Log::error("[Ichat]::GetInteractive | Error: " . $e->getMessage() . "\n" . $e->getFile() . "\n" . $e->getLine() . $e->getTraceAsString());
         }
+    }
+
+    private function getFileUrl($mediaId) {
+        $file = File::find($mediaId);
+        $fileToken = $file->generateToken(null, 2);
+        //Send url to get file
+        $messagaAttachment = \URL::route("public.media.media.show", [
+            "criteria" => $file->id,
+            "token" => $fileToken->token
+        ]);
+
+        return $messagaAttachment;
     }
 }

@@ -72,7 +72,9 @@ class MessageService
 
           // Save body of template (files and text)
           $messageText = $templateData["body"];
-          $data["file"] = $templateData["file"] ?? null;
+          $data["media_id"] = $templateData["media_id"] ?? null;
+          // If exist media id, save interactive with link media
+          if(isset($data["media_id"]) && $data["media_id"]) $data["template"] = $templateData["template"];
       }
 
       // Validate if data is a interactive message
@@ -82,7 +84,9 @@ class MessageService
 
           // Save body of interactiveMsg (files and text)
           $messageText = $interactiveData["body"];
-          $data["file"] = $interactiveData["file"] ?? null;
+          $data["media_id"] = $interactiveData["media_id"] ?? null;
+          // If exist media id, save interactive with link media
+          if(isset($data["media_id"]) && $data["media_id"]) $data["interactive"] = $interactiveData["interactive"];
       }
 
       /* Validate the conversation type private/public */
