@@ -53,14 +53,36 @@ class MessageService
       $response = ["data" => []];
 
       /** Get the parameters used from the data */
-      $messageText = ($data["message"] ?? $data["body"] ?? $data["template"]["name"] ?? null); // Message text
+      $messageText = ($data["message"] ?? $data["body"] ?? null); // Message text
       $sendToProvider = ($data["send_to_provider"] ?? false); // Define if the message should be send to the provider
 
       // Validate if the provider it's valid
       if (($data["provider"] ?? null)) {
-        $provider = Provider::where('system_name', $data["provider"])->first();
-        if (!$provider || !$provider->status || !isset($provider->fields))
-          throw new Exception("Provider '{$data["provider"]}' not found", 400);
+          $provider = Provider::where('system_name', $data["provider"])->first();
+          if (!$provider || !$provider->status || !isset($provider->fields))
+              throw new Exception("Provider '{$data["provider"]}' not found", 400);
+      }
+
+      $providerService = app("Modules\Ichat\Services\ProviderService");
+
+      // Validate if data has template
+      if (isset($data["template"]) && $data["template"]["name"]) {
+          // Get specific template of Whatsapp
+          $templateData = $providerService->getTemplateWhatsapp($data["template"]);
+
+          // Save body of template (files and text)
+          $messageText = $templateData["body"];
+          $data["file"] = $templateData["file"] ?? null;
+      }
+
+      // Validate if data is a interactive message
+      if(isset($data["interactive"]) && $data["interactive"]) {
+          // Get the interactive message already mapped
+          $interactiveData = $providerService->getInteractiveWhatsapp($data["interactive"]);
+
+          // Save body of interactiveMsg (files and text)
+          $messageText = $interactiveData["body"];
+          $data["file"] = $interactiveData["file"] ?? null;
       }
 
       /* Validate the conversation type private/public */
@@ -103,7 +125,7 @@ class MessageService
           "body" => $messageText ?? "",
           "attached" => $fileMessage ? $fileMessage->id : null,
           "medias_single" => $fileMessage ? ["attachment" => $fileMessage->id] : [],
-          "options" => ["template" => $data["template"] ?? null, "type" => $data["type"] ?? null],
+          "options" => ["template" => $data["template"] ?? null, "type" => $data["type"] ?? null, "interactive" => $data["interactive"] ?? null],
           "external_id" => $data["external_id"] ?? null,
           "status" => $data["status"] ?? 1,
           "created_at" => $data["created_at"] ?? Carbon::now()
@@ -300,6 +322,13 @@ class MessageService
         $messageTemplate = $message->options["template"];
       }
 
+      if(($message->options["interactive"] ?? null)) {
+          //Change the message type
+          $messageType = "interactive";
+          //Instance the message template
+          $messageInteractive = $message->options["interactive"];
+      }
+
       //type from $data
       isset($message->options["type"]) ? $messageType = $message->options["type"] : "";
 
@@ -311,7 +340,8 @@ class MessageService
           "type" => $messageType,
           "message" => $message->body,
           "file" => $messagaAttachment ?? null,
-          "template" => $messageTemplate ?? null
+          "template" => $messageTemplate ?? null,
+          "interactive" => $messageInteractive ?? null,
         ]);
     }
   }
