@@ -16,7 +16,7 @@ class ProviderService
     {
         try {
             // Request to the Facebook API to retrieve all templates
-            $fileResponse = \Cache::remember('ichatTemplatesWhatsapp', 86400, function () {
+            $fileResponse = \Cache::remember("IchatTempletasWhatsapp".(tenant()->id ?? ""), 86400, function () {
                 $provider = Provider::where("system_name", "whatsapp")->first();
                 $client = new \GuzzleHttp\Client();
 
