@@ -10,7 +10,7 @@ class MessageTransformer extends JsonResource
 {
   public function toArray($request)
   {
-    
+
     return [
       'id' => $this->id,
       'type' => $this->when($this->type, $this->type),
@@ -24,6 +24,8 @@ class MessageTransformer extends JsonResource
       'replyTo' => new MessageTransformer($this->whenLoaded('replyTo')),
       'conversation' => new ConversationTransformer ($this->whenLoaded('conversation')),
       'createdAt' => $this->when($this->created_at, $this->created_at),
+      'status' => $this->when($this->status, $this->status),
+      'statusName' => $this->when($this->statusName, $this->statusName)
     ];
   }
 }

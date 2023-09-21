@@ -49,7 +49,8 @@ class MessageApiController extends BaseApiController
         "conversation_private" => $data["conversation_private"] ?? 1,
         "media_id" => $data["media_id"] ?? $data["attached"] ?? null,
         "send_to_provider" => true,
-        "template" => $data["template"] ?? null
+        "template" => $data["template"] ?? null,
+        "interactive" => $data["interactive"] ?? null
       ];
       //Create message
       $result = $this->messageService->create($messageParsed);

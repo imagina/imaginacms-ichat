@@ -5,6 +5,7 @@ namespace Modules\Ichat\Entities;
 use Illuminate\Database\Eloquent\Model;
 use Modules\Media\Support\Traits\MediaRelation;
 use Modules\Core\Support\Traits\AuditTrait;
+use Modules\Ichat\Entities\Status;
 
 class Message extends Model
 {
@@ -19,7 +20,9 @@ class Message extends Model
     'user_id',
     'reply_to_id',
     'created_at',
-    'options'
+    'options',
+    'status',
+    'external_id'
   ];
 
   protected $casts = [
@@ -63,5 +66,11 @@ class Message extends Model
     else
       return null;
 
+  }
+
+  public function getStatusNameAttribute()
+  {
+    $status = new Status();
+    return $status->get($this->status);
   }
 }

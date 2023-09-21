@@ -53,18 +53,40 @@ class MessageService
       $response = ["data" => []];
 
       /** Get the parameters used from the data */
-      $messageText = ($data["message"] ?? $data["body"] ?? $data["template"]["name"] ?? null); // Message text
+      $messageText = ($data["message"] ?? $data["body"] ?? null); // Message text
       $sendToProvider = ($data["send_to_provider"] ?? false); // Define if the message should be send to the provider
 
-      /** Validate when it's possible create the message*/
-      //Valida for message information
-      if (!$messageText && !isset($data["file"]) && !isset($data["media_id"]))
-        throw new Exception("There is not body, message or file to save as message", 400);
       // Validate if the provider it's valid
       if (($data["provider"] ?? null)) {
-        $provider = Provider::where('system_name', $data["provider"])->first();
-        if (!$provider || !$provider->status || !isset($provider->fields))
-          throw new Exception("Provider '{$data["provider"]}' not found", 400);
+          $provider = Provider::where('system_name', $data["provider"])->first();
+          if (!$provider || !$provider->status || !isset($provider->fields))
+              throw new Exception("Provider '{$data["provider"]}' not found", 400);
+      }
+
+      $providerService = app("Modules\Ichat\Services\ProviderService");
+
+      // Validate if data has template
+      if (isset($data["template"]) && $data["template"]["name"]) {
+          // Get specific template of Whatsapp
+          $templateData = $providerService->getTemplateWhatsapp($data["template"]);
+
+          // Save body of template (files and text)
+          $messageText = $templateData["body"];
+          $data["media_id"] = $templateData["media_id"] ?? null;
+          // If exist media id, save interactive with link media
+          if(isset($data["media_id"]) && $data["media_id"]) $data["template"] = $templateData["template"];
+      }
+
+      // Validate if data is a interactive message
+      if(isset($data["interactive"]) && $data["interactive"]) {
+          // Get the interactive message already mapped
+          $interactiveData = $providerService->getInteractiveWhatsapp($data["interactive"]);
+
+          // Save body of interactiveMsg (files and text)
+          $messageText = $interactiveData["body"];
+          $data["media_id"] = $interactiveData["media_id"] ?? null;
+          // If exist media id, save interactive with link media
+          if(isset($data["media_id"]) && $data["media_id"]) $data["interactive"] = $interactiveData["interactive"];
       }
 
       /* Validate the conversation type private/public */
@@ -84,17 +106,35 @@ class MessageService
 
       //Validate if exist a file
       $fileMessage = $this->getMessageFile($data);
+      //Search message by externalId
+      $message = false;
+      if (isset($data["external_id"]) && $data["external_id"]) {
+        $message = $this->messageRepository->getItem($data["external_id"], json_decode(json_encode([
+          "filter" => ["field" => "external_id"],
+          "include" => []
+        ])));
+      }
 
-      /** create the message */
-      $response["data"]['message'] = $this->messageRepository->create([
-        "conversation_id" => $conversation->id,
-        "user_id" => $conversationUsers["sender"]->id,
-        "body" => $messageText ?? "",
-        "attached" => $fileMessage ? $fileMessage->id : null,
-        "medias_single" => $fileMessage ? ["attachment" => $fileMessage->id] : [],
-        "options" => ["template" => $data["template"] ?? null, "type" => $data["type"] ?? null],
-        "created_at" => $data["created_at"] ?? Carbon::now()
-      ]);
+      if ($message) {
+        /** update the message */
+        $response["data"]['message'] = $this->messageRepository->updateBy($message->id, [
+          "status" => $data["status"] ?? $message->status,
+          "updated_at" => Carbon::now()
+        ]);
+      } else if ($messageText || $fileMessage) {
+        /** create the message */
+        $response["data"]['message'] = $this->messageRepository->create([
+          "conversation_id" => $conversation->id,
+          "user_id" => $conversationUsers["sender"]->id,
+          "body" => $messageText ?? "",
+          "attached" => $fileMessage ? $fileMessage->id : null,
+          "medias_single" => $fileMessage ? ["attachment" => $fileMessage->id] : [],
+          "options" => ["template" => $data["template"] ?? null, "type" => $data["type"] ?? null, "interactive" => $data["interactive"] ?? null],
+          "external_id" => $data["external_id"] ?? null,
+          "status" => $data["status"] ?? 1,
+          "created_at" => $data["created_at"] ?? Carbon::now()
+        ]);
+      }
 
       /** emit the messaga to the provider */
       if ($sendToProvider) $this->emitMessageProvider(
@@ -233,6 +273,7 @@ class MessageService
     $file = ($data["file"] ?? null); // Message file
     $mediaId = ($data["media_id"] ?? null); // Message file form media by id
     $fileContext = ($data["file_context"] ?? []); // Message file context
+    $fileParams = ($data["file_params"] ?? []); // Message file params (e.g filename)
     //Instance the response
     $response = null;
     if ($mediaId) $response = File::find($mediaId);
@@ -240,7 +281,7 @@ class MessageService
       //Instance file service
       $fileService = app("Modules\Media\Services\FileService");
       //Get base64 file
-      $uploadedFile = getUploadedFileFromUrl($file, $fileContext);
+      $uploadedFile = getUploadedFileFromUrl($file, $fileContext, $fileParams);
       //Create file
       $response = $fileService->store($uploadedFile, 0, 'privatemedia');
     }
@@ -284,18 +325,27 @@ class MessageService
         //Instance the message template
         $messageTemplate = $message->options["template"];
       }
-      
+
+      if(($message->options["interactive"] ?? null)) {
+          //Change the message type
+          $messageType = "interactive";
+          //Instance the message template
+          $messageInteractive = $message->options["interactive"];
+      }
+
       //type from $data
       isset($message->options["type"]) ? $messageType = $message->options["type"] : "";
-      
+
       //Send notification
       $notification->provider($provider->system_name)
         ->to($message->conversation->entity_id)
         ->push([
+          "message_id" => $message->id,
           "type" => $messageType,
           "message" => $message->body,
           "file" => $messagaAttachment ?? null,
-          "template" => $messageTemplate ?? null
+          "template" => $messageTemplate ?? null,
+          "interactive" => $messageInteractive ?? null,
         ]);
     }
   }
