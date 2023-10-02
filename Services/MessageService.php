@@ -130,6 +130,7 @@ class MessageService
           "attached" => $fileMessage ? $fileMessage->id : null,
           "medias_single" => $fileMessage ? ["attachment" => $fileMessage->id] : [],
           "options" => ["template" => $data["template"] ?? null, "type" => $data["type"] ?? null, "interactive" => $data["interactive"] ?? null],
+          "reply_to_id" => $data["reply_to_id"] ?? null,
           "external_id" => $data["external_id"] ?? null,
           "status" => $data["status"] ?? 1,
           "created_at" => $data["created_at"] ?? Carbon::now()
