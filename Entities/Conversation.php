@@ -21,6 +21,8 @@ class Conversation extends Model
     'status',
     'entity_type',
     'entity_id',
+    'provider_type',
+    'provider_id',
   ];
 
   protected $with = ['users.roles'];
