@@ -14,7 +14,7 @@ trait Chateable
       'provider_type' => $params['provider_type'] ?? null,
       'provider_id' => $params['provider_id'] ?? null,
       'entity_id' => $params['entity_id'] ?? $this->id ?? null,
-      'entity_type' => $params['entity_type'] ?? $this->model ?? null,
+      'entity_type' => $params['entity_type'] ?? $this->entity ?? null,
       'users' => $params['users'] ?? $this->user ?? null
     ];
     $conversationRepository->create($data);
