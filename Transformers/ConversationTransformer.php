@@ -22,6 +22,8 @@ class ConversationTransformer extends JsonResource
       'conversationUsers' => ConversationUserTransformer::collection($this->whenLoaded('conversationUsers')),
       'entityType' => $this->when($this->entity_type, $this->entity_type),
       'entityId' => $this->when($this->entity_id, $this->entity_id),
+      'providerType' => $this->when($this->provider_type, $this->provider_type),
+      'providerId' => $this->when($this->provider_id, $this->provider_id),
       'createdAt' => $this->when($this->created_at, $this->created_at),
       'updatedAt' => $this->when($this->updated_at, $this->updated_at),
     ];
