@@ -130,6 +130,7 @@ class MessageService
           "attached" => $fileMessage ? $fileMessage->id : null,
           "medias_single" => $fileMessage ? ["attachment" => $fileMessage->id] : [],
           "options" => ["template" => $data["template"] ?? null, "type" => $data["type"] ?? null, "interactive" => $data["interactive"] ?? null],
+          "reply_to_id" => $data["reply_to_id"] ?? null,
           "external_id" => $data["external_id"] ?? null,
           "status" => $data["status"] ?? 1,
           "created_at" => $data["created_at"] ?? Carbon::now()
@@ -243,13 +244,13 @@ class MessageService
     if ($conversationId) $conversation = $this->conversation->find($data["conversation_id"]);
     else if ($provider) {
       //Search by entity
-      $conversation = $this->conversation->where("entity_type", $provider)
-        ->where("entity_id", $recipientId)->first();
+      $conversation = $this->conversation->where("provider_type", $provider)
+        ->where("provider_id", $recipientId)->first();
       //Create the conversation for provider
       if (!$conversation) $conversation = $this->conversation->create([
         "private" => $conversationPrivate,
-        "entity_type" => $provider,
-        "entity_id" => $recipientId,
+        "provider_type" => $provider,
+        "provider_id" => $recipientId,
         "users" => $conversationUsers
       ]);
     }
@@ -293,7 +294,7 @@ class MessageService
   public function emitMessageProvider($message, $conversation, $provider)
   {
     //Search if conversation is of the provider
-    $provider = $provider ?? Provider::where("system_name", $conversation->entity_type ?? "null")->first();
+    $provider = $provider ?? Provider::where("system_name", $conversation->provider_type ?? "null")->first();
     //Emit message
     if ($provider) {
       //Instance de inotification service
@@ -338,7 +339,7 @@ class MessageService
 
       //Send notification
       $notification->provider($provider->system_name)
-        ->to($message->conversation->entity_id)
+        ->to($message->conversation->provider_id)
         ->push([
           "message_id" => $message->id,
           "type" => $messageType,

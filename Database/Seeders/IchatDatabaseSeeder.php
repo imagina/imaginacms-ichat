@@ -18,7 +18,7 @@ class IchatDatabaseSeeder extends Seeder
     Model::unguard();
     ProcessSeeds::dispatch([
       "baseClass" => "\Modules\Ichat\Database\Seeders",
-      "seeds" => ["IchatModuleTableSeeder"]
+      "seeds" => ["IchatModuleTableSeeder","AddValuesProviderInConversationsTableSeeder"]
     ]);
   }
 }

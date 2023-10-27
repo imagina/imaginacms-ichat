@@ -6,7 +6,11 @@ return [
     "conversations" => "Chat"
   ],
   "message" => [
-    "noMessages" => "There isn't messages..."
+    "noMessages" => "There isn't messages...",
+    "couldNotSend" => "Message could not be sent"
+  ],
+  "label" => [
+    "resend" => "Resend"
   ]
 ];
 
