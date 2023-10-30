@@ -101,8 +101,10 @@ class MessageWasSavedListener
     foreach ($message->conversation->users as $key => $value) {
       foreach ($message->conversation->users[$key]->roles as $pos => $rol) {
         unset($message->conversation->users[$key]->roles[$pos]->permissions);
+        unset($message->conversation->users[$key]->roles[$pos]->settings);
       }
       unset($message->conversation->users[$key]->allPermissions);
+      unset($message->conversation->users[$key]->allSettings);
       unset($message->conversation->users[$key]->settings);
     }
 
