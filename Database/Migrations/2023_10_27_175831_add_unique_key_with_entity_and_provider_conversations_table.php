@@ -14,7 +14,7 @@ class AddUniqueKeyWithEntityAndProviderConversationsTable extends Migration
   public function up()
   {
     Schema::table('ichat__conversations', function (Blueprint $table) {
-      $table->unique(['provider_type', 'provider_id', 'entity_type', 'entity_id']);
+      $table->unique(['provider_type', 'provider_id', 'entity_type', 'entity_id'],'unique_provider_entity');
     });
   }
 
