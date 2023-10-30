@@ -11,7 +11,7 @@ trait Chateable
     $user = Auth::user();
     $conversationRepository = app('Modules\Ichat\Repositories\ConversationRepository');
     $data = [
-      'public' => $params['public'] ?? false,
+      'private' => $params['private'] ?? false,
       'provider_type' => $params['provider_type'] ?? null,
       'provider_id' => $params['provider_id'] ?? null,
       'entity_id' => $params['entity_id'] ?? $this->id ?? null,
