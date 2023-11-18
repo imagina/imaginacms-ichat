@@ -10,7 +10,8 @@ return [
     "couldNotSend" => "No se pudo enviar el mensaje"
   ],
   "label" => [
-    "resend" => "Reenviar"
+    "resend" => "Reenviar",
+    "sendMessage" => "Envia un mensaje..."
   ]
 ];
 
