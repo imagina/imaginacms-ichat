@@ -10,7 +10,8 @@ return [
     "couldNotSend" => "Message could not be sent"
   ],
   "label" => [
-    "resend" => "Resend"
+    "resend" => "Resend",
+    "sendMessage" => "Send a Message..."
   ]
 ];
 
