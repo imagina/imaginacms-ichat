@@ -11,33 +11,44 @@ use Illuminate\Support\Arr;
 
 class EloquentConversationRepository extends EloquentBaseRepository implements ConversationRepository
 {
+
+  /**
+   * @throws \Exception
+   */
   public function create($data)
   {
-    $conversation = null;
-    //if data has entity_type and entity_id, then creates the conversation
-    if (!empty($data['entity_type']) && !empty($data['entity_id'])) {
-      $conversation = $this->model->create($data);
-    } else {
-      //Validate if conversation already exist
-      $conversation = $this->model->whereHas('users', function ($q) use ($data) {
-        $q->select('conversation_id')->whereIn('user_id', $data['users'])->groupBy('conversation_id')
-          ->having(\DB::raw('count(*)'), '=', count($data['users']));
-      })->with('users')->first();
-
-      //Create conversation
-      if (!$conversation) {
+    $params['filter']['field'] = 'system_name';
+    $providerRepository = app('Modules\Notification\Repositories\ProviderRepository');
+    $provider = $providerRepository->getItem($data['provider_type'], json_decode(json_encode($params)));
+    if ($provider->status) {
+      $conversation = null;
+      //if data has entity_type and entity_id, then creates the conversation
+      if (!empty($data['entity_type']) && !empty($data['entity_id'])) {
         $conversation = $this->model->create($data);
+      } else {
+        //Validate if conversation already exist
+        $conversation = $this->model->whereHas('users', function ($q) use ($data) {
+          $q->select('conversation_id')->whereIn('user_id', $data['users'])->groupBy('conversation_id')
+            ->having(\DB::raw('count(*)'), '=', count($data['users']));
+        })->with('users')->first();
+
+        //Create conversation
+        if (!$conversation) {
+          $conversation = $this->model->create($data);
+        }
       }
-    }
 
-    //Sync Users relation
-    if ($conversation) {
-      $conversation->users()->sync(Arr::get($data, 'users', []));//Sync users
-      $conversation = $this->getItem($conversation->id, (object)["include" => ["users"]]); //Get model with user relation
-    }
+      //Sync Users relation
+      if ($conversation) {
+        $conversation->users()->sync(Arr::get($data, 'users', []));//Sync users
+        $conversation = $this->getItem($conversation->id, (object)["include" => ["users"]]); //Get model with user relation
+      }
 
-    //Response
-    return $conversation;
+      //Response
+      return $conversation;
+    } else {
+      throw new \Exception(trans('ichat::common.errors.providerDisable'), 406);
+    }
   }
 
   public function getItemsBy($params)
@@ -75,7 +86,7 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
         $orderByField = $filter->order->field ?? 'created_at';//Default field
         $orderWay = $filter->order->way ?? 'desc';//Default way
         $query->orderBy($orderByField, $orderWay);//Add order to query
-      }else{
+      } else {
         $query->orderBy('created_at', 'desc');
       }
 
