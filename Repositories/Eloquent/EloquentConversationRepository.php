@@ -20,7 +20,7 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
     $params['filter']['field'] = 'system_name';
     $providerRepository = app('Modules\Notification\Repositories\ProviderRepository');
     $provider = $providerRepository->getItem($data['provider_type'] ?? '', json_decode(json_encode($params)));
-    if (isset($provider) && $provider->status || is_null($data['provider_type'])) {
+    if (isset($provider->id) && $provider->status || is_null($data['provider_type'])) {
       $conversation = null;
       //if data has entity_type and entity_id, then creates the conversation
       if (!empty($data['entity_type']) && !empty($data['entity_id'])) {
