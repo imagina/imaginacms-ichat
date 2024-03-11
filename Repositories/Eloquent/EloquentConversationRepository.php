@@ -17,10 +17,13 @@ class EloquentConversationRepository extends EloquentBaseRepository implements C
    */
   public function create($data)
   {
-    $params['filter']['field'] = 'system_name';
+    $params = ['include' => [], 'filter' => ['field' => 'system_name']];
     $providerRepository = app('Modules\Notification\Repositories\ProviderRepository');
-    $provider = $providerRepository->getItem($data['provider_type'] ?? '', json_decode(json_encode($params)));
-    if (isset($provider->id) && $provider->status || is_null($data['provider_type'])) {
+    $provider = $providerRepository->getItem(
+      $data['provider_type'] ?? '',
+      json_decode(json_encode($params))
+    );
+    if ((isset($provider->id) && $provider->status) || (!isset($data['provider_type']) || is_null($data['provider_type']))) {
       $conversation = null;
       //if data has entity_type and entity_id, then creates the conversation
       if (!empty($data['entity_type']) && !empty($data['entity_id'])) {
