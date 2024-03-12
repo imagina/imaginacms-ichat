@@ -7,10 +7,12 @@ use Illuminate\Support\Facades\Auth;
 use Laracasts\Presenter\PresentableTrait;
 use Modules\Ichat\Presenters\ConversationPresenter;
 use Modules\Core\Support\Traits\AuditTrait;
+use Modules\Isite\Entities\Organization;
+use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 class Conversation extends Model
 {
-  use PresentableTrait, AuditTrait;
+  use PresentableTrait, AuditTrait, BelongsToTenant;
 
   //protected $presenter = ConversationPresenter::class;
 
@@ -25,11 +27,11 @@ class Conversation extends Model
     'provider_id',
   ];
 
-  protected $with = ['users.roles'];
+  protected $with = ['users.roles',"users","lastMessage","conversationUsers","organization.files"];
 
   public function entity()
   {
-    return $this->belongsTo($this->entity_type,'entity_id');
+    return $this->belongsTo($this->entity_type, 'entity_id');
   }
 
   public function messages()
@@ -40,7 +42,7 @@ class Conversation extends Model
   public function lastMessage()
   {
     return
-        $this->hasOne('Modules\Ichat\Entities\Message')->orderBy('created_at','desc');
+      $this->hasOne('Modules\Ichat\Entities\Message')->orderBy('created_at', 'desc');
   }
 
   public function users()
@@ -52,5 +54,10 @@ class Conversation extends Model
   public function conversationUsers()
   {
     return $this->hasMany('Modules\Ichat\Entities\ConversationUser');
+  }
+
+  public function organization()
+  {
+    return $this->belongsTo(Organization::class);
   }
 }

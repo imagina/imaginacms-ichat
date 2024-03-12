@@ -5,6 +5,7 @@ namespace Modules\Ichat\Transformers;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Iprofile\Transformers\UserTransformer;
 use Illuminate\Support\Facades\Auth;
+use Modules\Isite\Transformers\OrganizationTransformer;
 
 class ConversationTransformer extends JsonResource
 {
@@ -17,6 +18,7 @@ class ConversationTransformer extends JsonResource
       /*"lastMessageReaded" => $this->present()->lastMessageReaded,
       "unReadMessages" => $this->present()->unReadMessages,*/
       'lastMessage' => new MessageTransformer($this->whenLoaded('lastMessage')),
+      'organization' => new OrganizationTransformer($this->whenLoaded('organization')),
       'users' => UserTransformer::collection($this->whenLoaded('users')),
       'messages' => MessageTransformer::collection($this->whenLoaded('messages')),
       'conversationUsers' => ConversationUserTransformer::collection($this->whenLoaded('conversationUsers')),
