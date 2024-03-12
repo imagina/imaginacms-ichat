@@ -30,6 +30,16 @@ class ConversationApiController extends BaseApiController
     \DB::beginTransaction();
     try {
       $data = $request->input('attributes') ?? [];//Get data
+      //Set data to userSite conversation
+      if (isset($data['is_user_site'])) {
+        $data = [
+          "private" => 0,
+          "organization_id" => tenant()->id ?? ($data["organization_id"] ?? null),
+          "entity_type" => "Modules\User\Entities\Sentinel\User",
+          "entity_id" => \Auth::id(),
+          "users" => [\Auth::id()]
+        ];
+      }
       //Validate Request
       $this->validateRequestApi(new CreateConversationRequest($data));
       //Create item
