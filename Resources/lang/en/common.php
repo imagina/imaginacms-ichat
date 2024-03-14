@@ -4,6 +4,9 @@ return [
   'settings' => [
     'labelExternalRoles' => 'External Roles',
   ],
+  'settingsHelp' => [
+    'responsibleUsers' => 'The users selected here will be responsible for attending to pending conversations...',
+  ],
   'errors' => [
     'providerDisable' => 'Notification Provider Is Currently Disabled',
   ],
