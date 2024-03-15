@@ -10,9 +10,12 @@ use Modules\Core\Support\Traits\AuditTrait;
 use Modules\Isite\Entities\Organization;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
+use Modules\User\Entities\Sentinel\User;
+use Modules\Notification\Traits\IsNotificable;
+
 class Conversation extends Model
 {
-  use PresentableTrait, AuditTrait, BelongsToTenant;
+  use PresentableTrait, AuditTrait, BelongsToTenant, IsNotificable;
 
   //protected $presenter = ConversationPresenter::class;
 
@@ -25,6 +28,7 @@ class Conversation extends Model
     'entity_id',
     'provider_type',
     'provider_id',
+    'organization_id'
   ];
 
   protected $with = ['users.roles',"users","lastMessage","conversationUsers","organization.files"];
@@ -60,4 +64,41 @@ class Conversation extends Model
   {
     return $this->belongsTo(Organization::class);
   }
+
+  public function createdByUser(){
+    return $this->belongsTo(User::class,'created_by');
+  }
+  
+
+  /**
+   * Make Notificable Params | to Trait
+   * @param $event (created|updated|deleted)
+   */
+  public function isNotificableParams($event)
+  {
+
+    //Get Emails and Broadcast
+    $conversationService = app("Modules\Ichat\Services\ConversationService");
+    $result = $conversationService->getEmailsAndBroadcast($this);
+
+    //Validation Event Created
+    if($event=="created"){
+      //Extra Validation
+      if(empty($result['email']) && $result['broadcast']){
+        return null;
+      }
+    }
+    
+    return [
+      'created' => [
+        "title" => trans("ichat::common.conversation.created.title"),
+        "message" =>  trans("ichat::common.conversation.created.message",['user' => $result['createdByUser']]),
+        "email" => $result['email'],
+        "broadcast" => $result['broadcast']
+      ],
+    ];
+
+  }
+
+
 }
