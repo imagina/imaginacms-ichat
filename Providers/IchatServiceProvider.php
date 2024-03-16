@@ -2,12 +2,12 @@
 
 namespace Modules\Ichat\Providers;
 
-use Illuminate\Support\Arr;
 use Illuminate\Support\ServiceProvider;
+use Modules\Core\Traits\CanPublishConfiguration;
 use Modules\Core\Events\BuildingSidebar;
 use Modules\Core\Events\LoadingBackendTranslations;
-use Modules\Core\Traits\CanPublishConfiguration;
 use Modules\Ichat\Events\Handlers\RegisterIchatSidebar;
+use Illuminate\Support\Arr;
 
 class IchatServiceProvider extends ServiceProvider
 {
@@ -35,12 +35,14 @@ class IchatServiceProvider extends ServiceProvider
         });*/
     }
 
-    public function boot()
-    {
-        $this->publishConfig('ichat', 'permissions');
-        $this->publishConfig('ichat', 'config');
-        $this->mergeConfigFrom($this->getModuleConfigFilePath('ichat', 'cmsPages'), 'asgard.ichat.cmsPages');
-        $this->mergeConfigFrom($this->getModuleConfigFilePath('ichat', 'cmsSidebar'), 'asgard.ichat.cmsSidebar');
+  public function boot()
+  {
+    $this->publishConfig('ichat', 'permissions');
+    $this->publishConfig('ichat', 'config');
+    $this->mergeConfigFrom($this->getModuleConfigFilePath('ichat', 'cmsPages'), "asgard.ichat.cmsPages");
+    $this->mergeConfigFrom($this->getModuleConfigFilePath('ichat', 'cmsSidebar'), "asgard.ichat.cmsSidebar");
+    $this->mergeConfigFrom($this->getModuleConfigFilePath('ichat', 'settings'), "asgard.ichat.settings");
+    $this->mergeConfigFrom($this->getModuleConfigFilePath('ichat', 'settings-fields'), "asgard.ichat.settings-fields");
 
         //$this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
     }

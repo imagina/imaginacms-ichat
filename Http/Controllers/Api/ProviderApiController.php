@@ -4,11 +4,12 @@ namespace Modules\Ichat\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
 use Mockery\CountValidator\Exception;
-use Modules\Ichat\Services\MessageService;
 use Modules\Ihelpers\Http\Controllers\Api\BaseApiController;
 use Modules\Notification\Entities\Provider;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
+use Modules\Ichat\Services\MessageService;
 
 class ProviderApiController extends BaseApiController
 {
@@ -99,57 +100,38 @@ class ProviderApiController extends BaseApiController
         return response()->json($response ?? ['data' => 'Request successful'], $status ?? 200);
     }
 
-    /** Return the Whatsapp messages data  */
-    private function getWhatsappMessage($data, $provider)
-    {
-        try {
-            //Get attributes from the message
-            $contact = $data['entry'][0]['changes'][0]['value']['contacts'][0] ?? null;
-            $message = $data['entry'][0]['changes'][0]['value']['messages'][0] ?? null;
-            //Validate message
-            if (! $message) {
-                return null;
-            }
-            //Get date entry message
-            /*$messageDate = $message["timestamp"] ?? null;
-            if ($messageDate) {
-              $dateTmp = new \DateTime();
-              $dateTmp->setTimestamp($messageDate);
-              $messageDate = $dateTmp->format("Y-m-d H:m:s");
-            }*/
-            //Instance the response
-            $response = [
-                'recipient_id' => $message['from'],
-                'first_name' => $contact['profile']['name'] ?? null,
-                'message' => $message['text']['body'] ?? $message['button']['text'] ?? null,
-                //"created_at" => $messageDate
-            ];
-            //Get file
-            if (in_array($message['type'], ['video', 'document', 'image', 'audio', 'sticker'])) {
-                //Request File url
-                $client = new \GuzzleHttp\Client();
-                $fileResponse = $client->request('GET',
-                    "https://graph.facebook.com/v15.0/{$message[$message['type']]['id']}",
-                    ['headers' => [
-                        'Content-Type' => 'application/json',
-                        'Authorization' => "Bearer {$provider->fields->accessToken}",
-                    ]]
-                );
-                $fileResponse = json_decode($fileResponse->getBody()->getContents());
-                //Set file to response
-                $response['file'] = $fileResponse->url;
-                //Set file request context
-                $response['file_context'] = [
-                    'header' => "User-Agent: php/7 \r\n".
-                      "Authorization: Bearer {$provider->fields->accessToken}",
-                ];
-                //Replace the message text by the file caption
-                $response['message'] = $message[$message['type']]['caption'] ?? null;
-            }
-            //Response
-            return $response;
-        } catch (\Exception $e) {
-            throw new Exception('whatsappBusiness::Issue parsing the message: '.$e->getMessage(), 500);
-        }
+  /** Return the Whatsapp messages data  */
+  private function getWhatsappMessage($data, $provider)
+  {
+    try {
+      $response = $data;
+      //Get file
+      if (isset($data["file"]) && $data["file"]["id"]) {
+        //Request File url
+        $client = new \GuzzleHttp\Client();
+        $fileResponse = $client->request('GET',
+          "https://graph.facebook.com/v15.0/{$data["file"]["id"]}",
+          ['headers' => [
+            'Content-Type' => 'application/json',
+            'Authorization' => "Bearer {$provider->fields->accessToken}",
+          ]]
+        );
+        $fileResponse = json_decode($fileResponse->getBody()->getContents());
+        //Set file to response
+        $response["file"] = $fileResponse->url;
+        //Set file request context
+        $response["file_context"] = [
+          'header' => "User-Agent: php/7 \r\n" .
+            "Authorization: Bearer {$provider->fields->accessToken}"
+        ];
+        $response["file_params"] = [
+          'file_name' => $data["file"]["name"]
+        ];
+      }
+      //Response
+      return $response;
+    } catch (\Exception $e) {
+      throw new Exception('whatsappBusiness::Issue parsing the message: ' . $e->getMessage(), 500);
     }
+  }
 }

@@ -13,9 +13,9 @@ return new class extends Migration
    */
   public function up()
   {
-    Schema::table('ichat__messages', function (Blueprint $table) {
-        $table->string('external_id', 100)->nullable()->after('reply_to_id');
-        $table->integer('status')->default(1)->unsigned()->after('reply_to_id');
+    Schema::table('ichat__conversations', function (Blueprint $table) {
+      $table->string('provider_type')->nullable()->after('entity_id');
+      $table->string('provider_id')->nullable()->after('entity_id');
     });
   }
 
@@ -26,8 +26,9 @@ return new class extends Migration
    */
   public function down()
   {
-    Schema::table('ichat__messages', function (Blueprint $table) {
-      $table->dropColumn('external_id');
+    Schema::table('ichat__conversations', function (Blueprint $table) {
+      $table->dropColumn('provider_id');
+      $table->dropColumn('provider_type');
     });
   }
 };

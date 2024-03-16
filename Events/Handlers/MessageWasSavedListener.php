@@ -87,20 +87,34 @@ class MessageWasSavedListener
         }
     }
 
-    //Notify to conversations users
-    public function notifyConversationUsers($message, $usersToNotifyId)
-    {
-        //Send notification
-        $this->inotification->to(['broadcast' => $usersToNotifyId])->push([
-            'title' => 'New message',
-            'message' => 'You have a new message!',
-            'link' => url(''),
-            'isAction' => true,
-            'frontEvent' => [
-                'name' => 'inotification.chat.message',
-                'data' => new MessageTransformer($message),
-            ],
-            'setting' => ['saveInDatabase' => 1],
-        ]);
+  //Notify to conversations users
+  public function notifyConversationUsers($message, $usersToNotifyId)
+  {
+    //Remove unneeded data from message
+    $message = json_decode(json_encode(new MessageTransformer($message)));
+    $usersId = [];
+
+    foreach ($message->conversation->users as $key => $value) {
+      foreach ($message->conversation->users[$key]->roles as $pos => $rol) {
+        unset($message->conversation->users[$key]->roles[$pos]->permissions);
+        unset($message->conversation->users[$key]->roles[$pos]->settings);
+      }
+      unset($message->conversation->users[$key]->allPermissions);
+      unset($message->conversation->users[$key]->allSettings);
+      unset($message->conversation->users[$key]->settings);
     }
+
+    //Send notification
+    $this->inotification->to(['broadcast' => $usersToNotifyId])->push([
+      "title" => "New message",
+      "message" => "You have a new message!",
+      "link" => url(''),
+      "isAction" => true,
+      "frontEvent" => [
+        "name" => "inotification.chat.message",
+        "data" => $message
+      ],
+      "setting" => ["saveInDatabase" => 1]
+    ]);
+  }
 }

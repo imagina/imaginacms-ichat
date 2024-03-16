@@ -2,12 +2,13 @@
 
 namespace Modules\Ichat\Http\Controllers\Admin;
 
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Modules\Core\Http\Controllers\Admin\AdminBaseController;
 use Modules\Ichat\Entities\Message;
 use Modules\Ichat\Http\Requests\CreateMessageRequest;
 use Modules\Ichat\Http\Requests\UpdateMessageRequest;
 use Modules\Ichat\Repositories\MessageRepository;
+use Modules\Core\Http\Controllers\Admin\AdminBaseController;
 
 class MessageController extends AdminBaseController
 {

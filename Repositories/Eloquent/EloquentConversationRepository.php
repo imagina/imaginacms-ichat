@@ -2,43 +2,57 @@
 
 namespace Modules\Ichat\Repositories\Eloquent;
 
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Auth;
-use Modules\Core\Repositories\Eloquent\EloquentBaseRepository;
-use Modules\Ichat\Entities\Conversation;
-use Modules\Ichat\Entities\ConversationUser;
 use Modules\Ichat\Repositories\ConversationRepository;
+use Modules\Ichat\Entities\ConversationUser;
+use Modules\Ichat\Entities\Conversation;
+use Modules\Core\Repositories\Eloquent\EloquentBaseRepository;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Arr;
 
 class EloquentConversationRepository extends EloquentBaseRepository implements ConversationRepository
 {
-    public function create($data)
-    {
-        $conversation = null;
-        //if data has entity_type and entity_id, then creates the conversation
-        if (! empty($data['entity_type']) && ! empty($data['entity_id'])) {
-            $conversation = $this->model->create($data);
-        } else {
-            //Validate if conversation already exist
-            $conversation = $this->model->whereHas('users', function ($q) use ($data) {
-                $q->select('conversation_id')->whereIn('user_id', $data['users'])->groupBy('conversation_id')
-                  ->having(\DB::raw('count(*)'), '=', count($data['users']));
-            })->with('users')->first();
 
-            //Create conversation
-            if (! $conversation) {
-                $conversation = $this->model->create($data);
-            }
+  /**
+   * @throws \Exception
+   */
+  public function create($data)
+  {
+    $params = ['include' => [], 'filter' => ['field' => 'system_name']];
+    $providerRepository = app('Modules\Notification\Repositories\ProviderRepository');
+    $provider = $providerRepository->getItem(
+      $data['provider_type'] ?? '',
+      json_decode(json_encode($params))
+    );
+    if ((isset($provider->id) && $provider->status) || (!isset($data['provider_type']) || is_null($data['provider_type']))) {
+      $conversation = null;
+      //if data has entity_type and entity_id, then creates the conversation
+      if (!empty($data['entity_type']) && !empty($data['entity_id'])) {
+        $conversation = $this->model->create($data);
+      } else {
+        //Validate if conversation already exist
+        $conversation = $this->model->whereHas('users', function ($q) use ($data) {
+          $q->select('conversation_id')->whereIn('user_id', $data['users'])->groupBy('conversation_id')
+            ->having(\DB::raw('count(*)'), '=', count($data['users']));
+        })->with('users')->first();
+
+        //Create conversation
+        if (!$conversation) {
+          $conversation = $this->model->create($data);
         }
+      }
 
-        //Sync Users relation
-        if ($conversation) {
-            $conversation->users()->sync(Arr::get($data, 'users', [])); //Sync users
-            $conversation = $this->getItem($conversation->id, (object) ['include' => ['users']]); //Get model with user relation
-        }
+      //Sync Users relation
+      if ($conversation) {
+        $conversation->users()->sync(Arr::get($data, 'users', []));//Sync users
+        $conversation = $this->getItem($conversation->id, (object)["include" => ["users"]]); //Get model with user relation
+      }
 
-        //Response
-        return $conversation;
+      //Response
+      return $conversation;
+    } else {
+      throw new \Exception(trans('ichat::common.errors.providerDisable'), 406);
     }
+  }
 
     public function getItemsBy($params)
     {
