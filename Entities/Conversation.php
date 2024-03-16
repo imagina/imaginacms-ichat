@@ -3,9 +3,10 @@
 namespace Modules\Ichat\Entities;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Laracasts\Presenter\PresentableTrait;
-use Modules\Core\Support\Traits\AuditTrait;
 use Modules\Ichat\Presenters\ConversationPresenter;
+use Modules\Core\Support\Traits\AuditTrait;
 
 class Conversation extends Model
 {
@@ -15,12 +16,16 @@ class Conversation extends Model
 
     protected $table = 'ichat__conversations';
 
-    protected $fillable = [
-        'private',
-        'status',
-        'entity_type',
-        'entity_id',
-    ];
+  protected $fillable = [
+    'private',
+    'status',
+    'entity_type',
+    'entity_id',
+    'provider_type',
+    'provider_id',
+  ];
+
+  protected $with = ['users.roles'];
 
     public function entity()
     {

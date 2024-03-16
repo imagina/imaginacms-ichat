@@ -2,6 +2,8 @@
 
 namespace Modules\Ichat\Events\Handlers;
 
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Auth;
 use Modules\Ichat\Entities\ConversationUser;
 

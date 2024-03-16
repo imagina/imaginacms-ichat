@@ -2,8 +2,8 @@
 
 namespace Modules\Ichat\Presenters;
 
-use Illuminate\Support\Facades\Auth;
 use Laracasts\Presenter\Presenter;
+use Illuminate\Support\Facades\Auth;
 use Modules\Ichat\Entities\Message;
 
 class ConversationPresenter extends Presenter

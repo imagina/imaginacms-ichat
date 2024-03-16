@@ -3,10 +3,12 @@
 namespace Modules\Ichat\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Log;
 use Mockery\CountValidator\Exception;
 use Modules\Ichat\Entities\ConversationUser;
 use Modules\Ichat\Repositories\ConversationRepository;
 use Modules\Ichat\Repositories\MessageRepository;
+use Route;
 use Modules\Ihelpers\Http\Controllers\Api\BaseApiController;
 
 class PublicController extends BaseApiController

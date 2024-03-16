@@ -3,8 +3,9 @@
 namespace Modules\Ichat\Entities;
 
 use Illuminate\Database\Eloquent\Model;
-use Modules\Core\Support\Traits\AuditTrait;
 use Modules\Media\Support\Traits\MediaRelation;
+use Modules\Core\Support\Traits\AuditTrait;
+use Modules\Ichat\Entities\Status;
 
 class Message extends Model
 {
@@ -12,16 +13,18 @@ class Message extends Model
 
     use MediaRelation, AuditTrait;
 
-    protected $fillable = [
-        'type',
-        'body',
-        'attached',
-        'conversation_id',
-        'user_id',
-        'reply_to_id',
-        'created_at',
-        'options',
-    ];
+  protected $fillable = [
+    'type',
+    'body',
+    'attached',
+    'conversation_id',
+    'user_id',
+    'reply_to_id',
+    'created_at',
+    'options',
+    'status',
+    'external_id'
+  ];
 
     protected $casts = [
         'options' => 'array',
@@ -44,23 +47,32 @@ class Message extends Model
         return $this->hasOne(Message::class, 'id', 'reply_to_id');
     }
 
-    /**
-     * @return mixed
-     */
-    public function getAttachmentAttribute()
-    {
-        if (! empty($this->attached)) {
-            $thumbnail = $this->files()->where('zone', 'attachment')->first();
 
-            return [
-                'mimetype' => $thumbnail->mimetype ?? '',
-                'path' => \URL::route('ichat.message.attachment', ['conversationId' => $this->conversation_id, 'messageId' => $this->id, 'attachmentId' => $this->attached]),
-                'extension' => $thumbnail->extension ?? '',
-                'filename' => $thumbnail->filename ?? '',
-                'filesize' => $thumbnail->filesize ?? '',
-            ];
-        } else {
-            return null;
-        }
+
+  /**
+   * @return mixed
+   */
+  public function getAttachmentAttribute()
+  {
+
+    if(!empty($this->attached)){
+      $thumbnail = $this->files()->where('zone', 'attachment')->first();
+      return [
+        'mimetype' => $thumbnail->mimetype ?? '',
+        'path' => \URL::route('ichat.message.attachment', ["conversationId" => $this->conversation_id, "messageId" => $this->id, "attachmentId" => $this->attached]),
+        'extension' => $thumbnail->extension ?? '',
+        'filename' => $thumbnail->filename ?? '',
+        'filesize'=>$thumbnail->filesize ?? ''
+      ];
     }
+    else
+      return null;
+
+  }
+
+  public function getStatusNameAttribute()
+  {
+    $status = new Status();
+    return $status->get($this->status);
+  }
 }
