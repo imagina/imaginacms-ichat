@@ -2,17 +2,15 @@
 
 use Illuminate\Routing\Router;
 
-$router->group(['prefix' => '/ichat/v1'], function (Router $router) {
+Route::prefix('/ichat/v1')->group(function (Router $router) {
+    // Conversation
+    require 'ApiRoutes/conversationsRoutes.php';
 
-  // Messages
-  require ('ApiRoutes/messageRoutes.php');
+    // Messages
+    require 'ApiRoutes/messagesRoutes.php';
 
-  // Conversation
-  require ('ApiRoutes/conversationRoutes.php');
+    // Provider
+    require 'ApiRoutes/providersRoutes.php';
 
-  // Conversation User
-  require ('ApiRoutes/conversationUserRoutes.php');
-
-  // User With Conversations
-  require ('ApiRoutes/userRoutes.php');
+    // append
 });

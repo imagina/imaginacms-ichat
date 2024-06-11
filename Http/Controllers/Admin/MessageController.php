@@ -26,10 +26,8 @@ class MessageController extends AdminBaseController
 
     /**
      * Display a listing of the resource.
-     *
-     * @return Response
      */
-    public function index()
+    public function index(): Response
     {
         //$messages = $this->message->all();
 
@@ -38,21 +36,16 @@ class MessageController extends AdminBaseController
 
     /**
      * Show the form for creating a new resource.
-     *
-     * @return Response
      */
-    public function create()
+    public function create(): Response
     {
         return view('ichat::admin.messages.create');
     }
 
     /**
      * Store a newly created resource in storage.
-     *
-     * @param  CreateMessageRequest $request
-     * @return Response
      */
-    public function store(CreateMessageRequest $request)
+    public function store(CreateMessageRequest $request): Response
     {
         $this->message->create($request->all());
 
@@ -62,23 +55,16 @@ class MessageController extends AdminBaseController
 
     /**
      * Show the form for editing the specified resource.
-     *
-     * @param  Message $message
-     * @return Response
      */
-    public function edit(Message $message)
+    public function edit(Message $message): Response
     {
         return view('ichat::admin.messages.edit', compact('message'));
     }
 
     /**
      * Update the specified resource in storage.
-     *
-     * @param  Message $message
-     * @param  UpdateMessageRequest $request
-     * @return Response
      */
-    public function update(Message $message, UpdateMessageRequest $request)
+    public function update(Message $message, UpdateMessageRequest $request): Response
     {
         $this->message->update($message, $request->all());
 
@@ -88,11 +74,8 @@ class MessageController extends AdminBaseController
 
     /**
      * Remove the specified resource from storage.
-     *
-     * @param  Message $message
-     * @return Response
      */
-    public function destroy(Message $message)
+    public function destroy(Message $message): Response
     {
         $this->message->destroy($message);
 

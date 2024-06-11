@@ -4,9 +4,9 @@ namespace Modules\Ichat\Events;
 
 use Illuminate\Queue\SerializesModels;
 
-class MessageWasCreated
+class MessageWasRetrieved
 {
-  use SerializesModels;
+    use SerializesModels;
 
     public $message;
 
@@ -17,16 +17,14 @@ class MessageWasCreated
      */
     public function __construct($message)
     {
-      $this->message = $message;
+        $this->message = $message;
     }
 
-   /**
+    /**
      * Get the channels the event should be broadcast on.
-     *
-     * @return array
      */
     public function broadcastOn()
     {
-      return [];
+        return [];
     }
 }

@@ -3,158 +3,238 @@
 namespace Modules\Ichat\Repositories\Eloquent;
 
 use Modules\Ichat\Repositories\ConversationRepository;
+use Modules\Ichat\Entities\ConversationUser;
+use Modules\Ichat\Entities\Conversation;
 use Modules\Core\Repositories\Eloquent\EloquentBaseRepository;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Arr;
 
 class EloquentConversationRepository extends EloquentBaseRepository implements ConversationRepository
 {
-  public function getItemsBy($params)
-  {
-    // INITIALIZE QUERY
-    $query = $this->model->query();
-    /*== RELATIONSHIPS ==*/
-    if (in_array('*', $params->include)) {//If Request all relationships
-      $query->with([]);
-    } else {//Especific relationships
-      $includeDefault = ['users'];//Default relationships
-      if (isset($params->include))//merge relations with default relationships
-        $includeDefault = array_merge($includeDefault, $params->include);
-      $query->with($includeDefault);//Add Relationships to query
-    }
-    // FILTERS
-    if ($params->filter) {
-      $filter = $params->filter;
 
-      //Filter by date
-      if (isset($filter->date)) {
-        $date = $filter->date;//Short filter date
-        $date->field = $date->field ?? 'created_at';
-        if (isset($date->from))//From a date
-          $query->whereDate($date->field, '>=', $date->from);
-        if (isset($date->to))//to a date
-          $query->whereDate($date->field, '<=', $date->to);
-      }
-      //Order by
-      if (isset($filter->order)) {
-        $orderByField = $filter->order->field ?? 'created_at';//Default field
-        $orderWay = $filter->order->way ?? 'desc';//Default way
-        $query->orderBy($orderByField, $orderWay);//Add order to query
-      }
-
-      //Filter by senderId
-      if (isset($filter->senderId)) {
-        $query->where("sender_id", $filter->senderId);
-      }
-
-      //Filter by receiverId
-      if (isset($filter->receiverId)) {
-        $query->where("receiver_id", $filter->receiverId);
-      }
-
-      // Filter by Status
-      if (isset($filter->status)) {
-        $query->where('status', $filter->status);
-      }
-
-      // Filter between any users
-      if (isset($filter->between)) {
-        foreach ($filter->between as $user){
-          $query->whereHas('users', function ($query) use ($filter, $user){
-            $query->where('user_id', $user);
-          });
-        }
-      }
-
-      // Filter by user
-      if (isset($filter->myconversations)) {
-        $query->wherehas('users', function ($query){
-          $query->where('user_id', Auth::id());
-        });
-      }
-
-
-    }
-    /*== FIELDS ==*/
-    if (isset($params->fields) && count($params->fields))
-      $query->select($params->fields);
-    /*== REQUEST ==*/
-    if (isset($params->page) && $params->page) {
-      return $query->paginate($params->take);
-    } else {
-      $params->take ? $query->take($params->take) : false;//Take
-      return $query->get();
-    }
-  }
-  public function getItem($criteria, $params = false)
-  {
-    //Initialize query
-    $query = $this->model->query();
-    /*== RELATIONSHIPS ==*/
-    if (in_array('*', $params->include)) {//If Request all relationships
-      $query->with([]);
-    } else {//Especific relationships
-      $includeDefault = [];//Default relationships
-      if (isset($params->include))//merge relations with default relationships
-        $includeDefault = array_merge($includeDefault, $params->include);
-      $query->with($includeDefault);//Add Relationships to query
-    }
-    /*== FILTER ==*/
-    if (isset($params->filter)) {
-      $filter = $params->filter;
-      // find translatable attributes
-      $translatedAttributes = $this->model->translatedAttributes;
-      if(isset($filter->field))
-        $field = $filter->field;
-      // filter by translatable attributes
-      if (isset($field) && in_array($field, $translatedAttributes))//Filter by slug
-        $query->whereHas('translations', function ($query) use ($criteria, $filter, $field) {
-          $query->where('locale', $filter->locale)
-            ->where($field, $criteria);
-        });
-      else
-        // find by specific attribute or by id
-        $query->where($field ?? 'id', $criteria);
-    }
-    /*== REQUEST ==*/
-    return $query->first();
-  }
+  /**
+   * @throws \Exception
+   */
   public function create($data)
   {
-    //$data['sender_id'] = Auth::user()->id;
-    $conversation = $this->model->create($data);
-    if ($conversation) {
-      $conversation->users()->sync(array_get($data, 'users', []));
+    $params = ['include' => [], 'filter' => ['field' => 'system_name']];
+    $providerRepository = app('Modules\Notification\Repositories\ProviderRepository');
+    $provider = $providerRepository->getItem(
+      $data['provider_type'] ?? '',
+      json_decode(json_encode($params))
+    );
+    if ((isset($provider->id) && $provider->status) || (!isset($data['provider_type']) || is_null($data['provider_type']))) {
+      $conversation = null;
+      //if data has entity_type and entity_id, then creates the conversation
+      if (!empty($data['entity_type']) && !empty($data['entity_id'])) {
+        //Validate if conversation already exist
+        $conversation = $this->model->where('entity_type', $data['entity_type'])->where('entity_id', $data['entity_id'])
+          ->where('organization_id', $data['organization_id'] ?? null)->first();
+      } else {
+        //Validate if conversation already exist
+        $conversation = $this->model->whereHas('users', function ($q) use ($data) {
+          $q->select('conversation_id')->whereIn('user_id', $data['users'])->groupBy('conversation_id')
+            ->having(\DB::raw('count(*)'), '=', count($data['users']));
+        })->with('users')->first();
+      }
+
+      //Create conversation
+      if (!$conversation) $conversation = $this->model->create($data);
+      //Forze to put the organization_id
+      if (isset($data['organization_id']) && $data['organization_id']) {
+        $this->model->where('id', $conversation->id)->update([
+          "organization_id" => $data['organization_id']
+        ]);
+      }
+
+      //Sync Users relation
+      if ($conversation) {
+        $conversation->users()->sync(Arr::get($data, 'users', []));//Sync users
+        $conversation = $this->getItem($conversation->id, (object)["include" => ["users"]]); //Get model with user relation
+      }
+
+      //Response
+      return $conversation;
+    } else {
+      throw new \Exception(trans('ichat::common.errors.providerDisable'), 406);
     }
-    return $conversation;
-  }
-  public function updateBy($criteria, $data, $params = false)
-  {
-    /*== initialize query ==*/
-    $query = $this->model->query();
-    /*== FILTER ==*/
-    if (isset($params->filter)) {
-      $filter = $params->filter;
-      //Update by field
-      if (isset($filter->field))
-        $field = $filter->field;
-    }
-    /*== REQUEST ==*/
-    $model = $query->where($field ?? 'id', $criteria)->first();
-    return $model ? $model->update((array)$data) : false;
-  }
-  public function deleteBy($criteria, $params = false)
-  {
-    /*== initialize query ==*/
-    $query = $this->model->query();
-    /*== FILTER ==*/
-    if (isset($params->filter)) {
-      $filter = $params->filter;
-      if (isset($filter->field))//Where field
-        $field = $filter->field;
-    }
-    /*== REQUEST ==*/
-    $model = $query->where($field ?? 'id', $criteria)->first();
-    $model ? $model->delete() : false;
   }
 
+    public function getItemsBy($params)
+    {
+        // INITIALIZE QUERY
+        $query = $this->model->query();
+
+    // RELATIONSHIPS
+        if (in_array('*', $params->include)) {//If Request all relationships
+            $query->with([]);
+        } else {//Especific relationships
+            $includeDefault = []; //Default relationships
+            if (isset($params->include)) {//merge relations with default relationships
+                $includeDefault = array_merge($includeDefault, $params->include);
+            }
+
+            $query->with($includeDefault); //Add Relationships to query
+        }
+
+        // FILTERS
+        if ($params->filter) {
+            $filter = $params->filter;
+
+            //Filter by date
+            if (isset($filter->date)) {
+                $date = $filter->date; //Short filter date
+                $date->field = $date->field ?? 'created_at';
+                if (isset($date->from)) {//From a date
+                    $query->whereDate($date->field, '>=', $date->from);
+                }
+                if (isset($date->to)) {//to a date
+                    $query->whereDate($date->field, '<=', $date->to);
+                }
+            }
+
+            //Order by
+            if (isset($filter->order)) {
+                $orderByField = $filter->order->field ?? 'created_at'; //Default field
+                $orderWay = $filter->order->way ?? 'desc'; //Default way
+                $query->orderBy($orderByField, $orderWay); //Add order to query
+            } else {
+                $query->orderBy('created_at', 'desc');
+            }
+
+            //by ids
+            if (isset($filter->ids) && ! empty($filter->ids)) {
+                is_array($filter->ids) ? true : $filter->ids = [$filter->ids];
+                $query->whereIn('ichat__conversations.id', $filter->ids);
+            }
+        }
+
+        //Get all public conversations and own chats
+        if (isset($params->permissions['ichat.conversations.index-all']) && $params->permissions['ichat.conversations.index-all']) {
+            //Add the auth user to all public conversations
+            $this->addAuthUserToPublicConversations();
+            //Add the filter
+            $query->where(function ($q) {
+                $q->where('private', '0')->orWherehas('users', function ($query) {
+                    $query->where('user_id', Auth::id());
+                });
+            });
+        } else {//Get only the own chats
+            $query->wherehas('users', function ($query) {
+                $query->where('user_id', Auth::id());
+            });
+        }
+
+        //Search
+        if (isset($filter->search) && $filter->search) {
+            $query->wherehas('users', function ($qSearch) use ($filter) {
+                $qSearch->where('users.email', 'like', "%$filter->search%")
+                  ->orWhere('users.first_name', 'like', "%$filter->search%")
+                  ->orWhere('users.last_name', 'like', "%$filter->search%");
+            });
+        }
+
+        /*== FIELDS ==*/
+        if (isset($params->fields) && count($params->fields)) {
+            $query->select($params->fields);
+        }
+        /*== REQUEST ==*/
+        if (isset($params->page) && $params->page) {
+            return $query->paginate($params->take);
+        } else {
+            $params->take ? $query->take($params->take) : false; //Take
+
+            return $query->get();
+        }
+    }
+
+    public function getItem($criteria, $params = false)
+    {
+        //Initialize query
+        $query = $this->model->query();
+
+        /*== RELATIONSHIPS ==*/
+        if (in_array('*', $params->include)) {//If Request all relationships
+            $query->with([]);
+        } else {//Especific relationships
+            $includeDefault = []; //Default relationships
+            if (isset($params->include)) {//merge relations with default relationships
+                $includeDefault = array_merge($includeDefault, $params->include);
+            }
+            $query->with($includeDefault); //Add Relationships to query
+        }
+
+        /*== FILTER ==*/
+        if (isset($params->filter)) {
+            $filter = $params->filter;
+
+            if (isset($filter->field)) {//Filter by specific field
+                $field = $filter->field;
+            }
+        }
+
+        if (isset($params->permissions['ichat.conversations.index-all']) && ! $params->permissions['ichat.conversations.index-all']) {
+            //Limit only to current user
+            $query->wherehas('users', function ($query) {
+                $query->where('user_id', Auth::id());
+            });
+        }
+
+        /*== FIELDS ==*/
+        if (isset($params->fields) && count($params->fields)) {
+            $query->select($params->fields);
+        }
+
+        /*== REQUEST ==*/
+        return $query->where($field ?? 'id', $criteria)->first();
+    }
+
+    public function updateBy($criteria, $data, $params = false)
+    {
+        /*== initialize query ==*/
+        $query = $this->model->query();
+        /*== FILTER ==*/
+        if (isset($params->filter)) {
+            $filter = $params->filter;
+            //Update by field
+            if (isset($filter->field)) {
+                $field = $filter->field;
+            }
+        }
+        /*== REQUEST ==*/
+        $model = $query->where($field ?? 'id', $criteria)->first();
+
+        return $model ? $model->update((array) $data) : false;
+    }
+
+    public function deleteBy($criteria, $params = false)
+    {
+        /*== initialize query ==*/
+        $query = $this->model->query();
+        /*== FILTER ==*/
+        if (isset($params->filter)) {
+            $filter = $params->filter;
+            if (isset($filter->field)) {//Where field
+                $field = $filter->field;
+            }
+        }
+        /*== REQUEST ==*/
+        $model = $query->where($field ?? 'id', $criteria)->first();
+        $model ? $model->delete() : false;
+    }
+
+    private function addAuthUserToPublicConversations()
+    {
+        //Get all public conversations where the current user not exist
+        $publicConversations = Conversation::where('private', '0')
+          ->whereNotIn('id', function ($q) {
+              $q->select('conversation_id')->from('ichat__conversation_user')->where('user_id', Auth::id());
+          })->get();
+        //Create relation
+        if ($publicConversations->count()) {
+            ConversationUser::insert($publicConversations->map(function ($conversation) {
+                return ['user_id' => Auth::id(), 'conversation_id' => $conversation->id];
+            })->toArray());
+        }
+    }
 }

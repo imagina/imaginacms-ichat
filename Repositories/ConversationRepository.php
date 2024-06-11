@@ -6,42 +6,13 @@ use Modules\Core\Repositories\BaseRepository;
 
 interface ConversationRepository extends BaseRepository
 {
-    /**
-   * Return the latest x blog posts
-   * @param object $params
-   * @return Collection
-   */
-  public function getItemsBy($params);
+    public function getItemsBy($params);
 
-    /**
-   * Return the latest x blog posts
-   * @param object $params
-   * @param object $params
-   * @return Collection
-   */
-  public function getItem($criteria, $params);
+    public function getItem($criteria, $params = false);
 
-    /**
-   * Return the latest x blog posts
-   * @param object $data
-   * @return Collection
-   */
-  public function create($data);
+    public function create($data);
 
-    /**
-   * Return the latest x blog posts
-   * @param String $criteria
-   * @param object $data
-   * @param object $params
-   * @return Collection
-   */
-  public function updateBy($criteria, $data, $params);
+    public function updateBy($criteria, $data, $params = false);
 
-    /**
-   * Return the latest x blog posts
-   * @param String $criteria
-   * @param object $params
-   * @return Collection
-   */
-  public function deleteBy($criteria, $params);
+    public function deleteBy($criteria, $params = false);
 }

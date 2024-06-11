@@ -1,5 +1,16 @@
 <?php
 
 return [
-    'name' => 'Ichat'
+    'name' => 'Ichat',
+
+    /*
+|--------------------------------------------------------------------------
+| Define config to the mediaFillable trait for each entity
+|--------------------------------------------------------------------------
+*/
+    'mediaFillable' => [
+        'message' => [
+            'attachment' => 'single',
+        ],
+    ],
 ];
