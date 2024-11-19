@@ -8,14 +8,14 @@ use Laracasts\Presenter\PresentableTrait;
 use Modules\Ichat\Presenters\ConversationPresenter;
 use Modules\Core\Support\Traits\AuditTrait;
 use Modules\Isite\Entities\Organization;
-use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
+//use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 use Modules\User\Entities\Sentinel\User;
 use Modules\Notification\Traits\IsNotificable;
 
 class Conversation extends Model
 {
-  use PresentableTrait, AuditTrait, BelongsToTenant, IsNotificable;
+  use PresentableTrait, AuditTrait, IsNotificable;
 
   //protected $presenter = ConversationPresenter::class;
 
@@ -68,7 +68,7 @@ class Conversation extends Model
   public function createdByUser(){
     return $this->belongsTo(User::class,'created_by');
   }
-  
+
 
   /**
    * Make Notificable Params | to Trait
@@ -91,7 +91,7 @@ class Conversation extends Model
 
     $userId = \Auth::id() ?? null;
     $source = "ichat";
-    
+
     return [
       'created' => [
         "title" => trans("ichat::common.conversation.created.title"),

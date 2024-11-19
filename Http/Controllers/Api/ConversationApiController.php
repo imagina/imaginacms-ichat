@@ -32,7 +32,7 @@ class ConversationApiController extends BaseApiController
       $data = $request->input('attributes') ?? [];//Get data
       //Set data to userSite conversation
       if (isset($data['is_user_site'])) {
-        $tenantId = tenant()->id ?? ($data["organization_id"] ?? null);
+        $tenantId = $data["organization_id"] ?? null;
         $users = [\Auth::id()];
 
         // Include user tenant to conversation
@@ -50,6 +50,7 @@ class ConversationApiController extends BaseApiController
           "users" => $users
         ];
       }
+
       //Validate Request
       $this->validateRequestApi(new CreateConversationRequest($data));
       //Create item
