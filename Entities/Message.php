@@ -8,7 +8,7 @@ use Modules\Core\Support\Traits\AuditTrait;
 use Modules\Ichat\Entities\Status;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 use Illuminate\Support\Str;
-use Modules\Isite\Entities\Organization;
+use Modules\Itenant\Entities\Organization;
 
 class Message extends Model
 {

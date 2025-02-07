@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Laracasts\Presenter\PresentableTrait;
 use Modules\Ichat\Presenters\ConversationPresenter;
 use Modules\Core\Support\Traits\AuditTrait;
-use Modules\Isite\Entities\Organization;
+use Modules\Itenant\Entities\Organization;
 //use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 use Modules\User\Entities\Sentinel\User;
