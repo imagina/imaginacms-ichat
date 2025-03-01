@@ -16,5 +16,9 @@ return [
       'message' => ':user has started a new conversation with you',
     ]
   ],
+  'newMessage' => [
+    'title' => 'New Message',
+    'message' => 'There is a new message!',
+  ]
 ];
 

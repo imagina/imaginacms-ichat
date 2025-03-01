@@ -86,7 +86,7 @@ class MessageWasSavedListener
         ->where('user_id', $userId)->update(['unread_messages_count' => \DB::raw('(
             SELECT COUNT(*) FROM ichat__messages
             WHERE ichat__messages.conversation_id = ichat__conversation_user.conversation_id
-            AND ichat__messages.id > ichat__conversation_user.last_message_readed 
+            AND ichat__messages.id > ichat__conversation_user.last_message_readed
         )')]);
     }
   }
@@ -97,7 +97,7 @@ class MessageWasSavedListener
     //Remove unneeded data from message
     $message = json_decode(json_encode(new MessageTransformer($message)));
     $usersId = [];
-    
+
     //Clean data (pusher restrictions)
     $message->conversation = [
       "id" => $message->conversation->id
@@ -105,10 +105,11 @@ class MessageWasSavedListener
 
     //Send notification
     $this->inotification->to(['broadcast' => $usersToNotifyId])->push([
-      "title" => "New message",
-      "message" => "You have a new message!",
+      "title" => trans('ichat::common.newMessage.title'),
+      "message" => trans('ichat::common.newMessage.message'),
       "link" => url(''),
-      "isAction" => true,
+      "vueRoute" => "qchat.admin.conversations",
+      "isAction" => false,
       "frontEvent" => [
         "name" => "inotification.chat.message",
         "data" => $message
