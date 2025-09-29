@@ -107,7 +107,7 @@ class MessageWasSavedListener
     $this->inotification->to(['broadcast' => $usersToNotifyId])->push([
       "title" => trans('ichat::common.newMessage.title'),
       "message" => trans('ichat::common.newMessage.message'),
-      "link" => url(''),
+      "link" => url('/ipanel/#/ichat/conversations/'),
       "vueRoute" => "qchat.admin.conversations",
       "isAction" => false,
       "frontEvent" => [
