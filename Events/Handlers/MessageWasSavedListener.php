@@ -103,8 +103,17 @@ class MessageWasSavedListener
       "id" => $message->conversation->id
     ];
 
+    $emailsUsersToNotify = [];
+
+    if (setting('ichat::notifyChatByEmail')) {
+      $emailsUsersToNotify = app('Modules\User\Repositories\UserRepository')->find($usersToNotifyId)->pluck('email')->toArray();
+    }
+
     //Send notification
-    $this->inotification->to(['broadcast' => $usersToNotifyId])->push([
+    $this->inotification->to([
+      'broadcast' => $usersToNotifyId,
+      'email' => $emailsUsersToNotify
+    ])->push([
       "title" => trans('ichat::common.newMessage.title'),
       "message" => trans('ichat::common.newMessage.message'),
       "link" => url('/ipanel/#/ichat/conversations/'),

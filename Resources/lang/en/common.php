@@ -3,6 +3,8 @@
 return [
   'settings' => [
     'labelExternalRoles' => 'External Roles',
+    'responsibleUsers' => 'Responsible Users',
+    'labelNotifyChatByEmail' => 'Notify Chats by Email'
   ],
   'settingsHelp' => [
     'responsibleUsers' => 'The users selected here will be responsible for attending to pending conversations...',

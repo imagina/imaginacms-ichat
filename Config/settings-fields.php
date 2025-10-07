@@ -37,4 +37,13 @@ return [
       'clearable' => true,
     ],
   ],
+  'notifyChatByEmail' => [
+    'value' => false,
+    'name' => 'ichat::notifyChatByEmail',
+    'type' => 'checkbox',
+    "onlySuperAdmin" => true,
+    'props' => [
+      'label' => 'ichat::common.settings.labelNotifyChatByEmail'
+    ]
+  ],
 ];

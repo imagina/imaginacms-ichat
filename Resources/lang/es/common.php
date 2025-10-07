@@ -4,6 +4,7 @@ return [
   'settings' => [
     'labelExternalRoles' => 'Roles Externos',
     'responsibleUsers' => 'Usuarios Responsables',
+    'labelNotifyChatByEmail' => 'Notificar Chats por Correo Electronico'
   ],
   'settingsHelp' => [
     'responsibleUsers' => 'Los usuarios aquí seleccionados seran responsables de atender las conversaciones pendientes...',
